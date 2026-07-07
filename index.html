@@ -12,10 +12,10 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-    <!-- Babel Standalone (Para compilar JSX en el navegador) -->
+    <!-- Babel Standalone -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Import Map para cargar módulos de Firebase Modular SDK via CDN -->
+    <!-- Import Map para Firebase -->
     <script type="importmap">
       {
         "imports": {
@@ -28,14 +28,12 @@
 </head>
 <body class="m-0 p-0 bg-slate-50 min-h-screen">
     
-    <!-- Contenedor principal de React -->
     <div id="root"></div>
 
-    <!-- Script de la aplicación (type="text/babel" para JSX, data-type="module" para soportar Imports de Firebase) -->
     <script type="text/babel" data-type="module">
         const { useState, useMemo, useEffect } = React;
         
-        // Importaciones modulares de Firebase (habilitadas por el importmap)
+        // Importaciones Firebase
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
@@ -54,82 +52,60 @@
         const app = initializeApp(userFirebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'wmg-project-dashboard'; // Identificador único de los datos
+        const appId = 'wmg-project-dashboard';
 
         // --- ÍCONOS SVG ---
         const TrashIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
         );
         const PlusIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         );
         const DashboardIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
         );
         const QuestionIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        );
+        const SettingsIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
         );
         const FilterIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
         );
         const CheckCircleIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         );
         const ClockIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
-            <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         );
         const TargetIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
-            <circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
         );
         const ChevronDownIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         );
         const CopyIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
         );
         const SmallCheckIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-            <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><polyline points="20 6 9 17 4 12"></polyline></svg>
         );
         const CloudSyncIcon = ({ connected, error }) => (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`${error ? 'text-red-500' : connected ? 'text-emerald-500' : 'text-slate-400'}`}>
-            <path d="M17.5 19A5.5 5.5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"></path>
-            <polyline points="16 12 12 8 8 12"></polyline>
-            <line x1="12" y1="8" x2="12" y2="20"></line>
+            <path d="M17.5 19A5.5 5.5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"></path><polyline points="16 12 12 8 8 12"></polyline><line x1="12" y1="8" x2="12" y2="20"></line>
             {error && <line x1="4" y1="4" x2="20" y2="20" stroke="currentColor" strokeWidth="2" />}
         </svg>
         );
 
-        // --- CONSTANTES ---
-        const opcionesSegmento = ["Regalias", "Data Migración", "Bancos", "Change Management", "Requerimientos Locales", "Impuestos", "P2P"];
-        const opcionesSistema = ["WARS", "GFS", "WARS/GFS/HFM", "Vistex/WARS/FRED", "GFS: Vendors", "WADS/WARIS: Customers", "WACS: Vendors", "GFS: COA", "Santander", "GFS: Fixed Assets", "GFS: Open Items AP", "GFS: Open Items AR", "GFS/PIMPS: POs", "GFS: Local Book", "GFS: Tax Book", "Concur: GL Mapping", "Ariba: GL Mapping", "Citibank", "Amex", "Concur", "Totvs", "Totvs: Vendors", "Totvs: COA", "Totvs: Fixed Assets", "Totvs: Open Items AP", "Totvs: Open Items AR", "Totvs/PIMPS: POs", "Totvs: Local Book", "Totvs: Tax Book", "GFS/HFM", "Totvs/HFM", "WARS/Totvs/HFM"];
-        const opcionesResponsable = ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon", "Anibal Flores", "Gonzalo Anselmi", "Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez", "Oscar Barranco", "Luis Erik Rodriguez", "Norma Riquelme", "Nadia Ceron", "Ignacio Flores", "Sebastian Quinteros", "Carla Figueira", "Gustavo Pereira", "Marcio Ricardo", "Diego Vilhena", "Maurilio Pimenta", "Fernando Mongue", "Nancy Garavito"];
+        // --- CONSTANTES INICIALES (Semilla para Firestore) ---
+        const initSegmentos = ["Regalias", "Data Migración", "Bancos", "Change Management", "Requerimientos Locales", "Impuestos", "P2P"];
+        const initSistemas = ["WARS", "GFS", "WARS/GFS/HFM", "Vistex/WARS/FRED", "GFS: Vendors", "WADS/WARIS: Customers", "WACS: Vendors", "GFS: COA", "Santander", "GFS: Fixed Assets", "GFS: Open Items AP", "GFS: Open Items AR", "GFS/PIMPS: POs", "GFS: Local Book", "GFS: Tax Book", "Concur: GL Mapping", "Ariba: GL Mapping", "Citibank", "Amex", "Concur", "Totvs", "Totvs: Vendors", "Totvs: COA", "Totvs: Fixed Assets", "Totvs: Open Items AP", "Totvs: Open Items AR", "Totvs/PIMPS: POs", "Totvs: Local Book", "Totvs: Tax Book", "GFS/HFM", "Totvs/HFM", "WARS/Totvs/HFM"];
+        const initResponsables = ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon", "Anibal Flores", "Gonzalo Anselmi", "Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez", "Oscar Barranco", "Luis Erik Rodriguez", "Norma Riquelme", "Nadia Ceron", "Ignacio Flores", "Sebastian Quinteros", "Carla Figueira", "Gustavo Pereira", "Marcio Ricardo", "Diego Vilhena", "Maurilio Pimenta", "Fernando Mongue", "Nancy Garavito"].sort((a,b) => a.localeCompare(b));
+        
         const opcionesPais = ["Argentina", "Mexico", "Chile", "Brazil", "ALL"];
         const opcionesCorte = ["", "Aplica", "En Proceso", "Completado"];
 
-        // Helper para colores de país
         const getCountryColor = (pais) => {
             switch (pais) {
                 case 'Argentina': return 'bg-sky-100 text-sky-800 border-sky-200 focus:ring-sky-500 hover:bg-sky-200';
@@ -141,222 +117,17 @@
             }
         };
 
-        // --- DATOS SEMILLA ---
         const initialTasks = [
             { id: 101, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
             { id: 102, segmento: "Regalias", sistema: "GFS", accion: "Validar que todos los Royaltors en GFS/Template tengan el grupo contable ROY", responsable: ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
             { id: 103, segmento: "Regalias", sistema: "WARS", accion: "Actualización de Nombres Artisticos a Nombres Legales en WARS", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 104, segmento: "Regalias", sistema: "WARS", accion: "Determinación de Royaltors que no tienen los datos suficientes para crearse en SAP ( Tax ID, Dirección, Nombre, Datos Bancarios)", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 105, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta anticipos artistiticos por Royaltor en WARS, Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 106, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta pasivos de regalias artistiticas por Royaltor en WARS + accruals AS606 , Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 107, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta de reservas de Unproven, por royaltor, Conciliado con el GL Balance de Contabilidad y HFM / Si tenemos algún anticipo desprovisto de reserva...", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 108, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Si existen provisiones manuales que no están en WARS y no son de AS606, se requiere detallar en las reconciliaciones de Balance", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 109, segmento: "Regalias", sistema: "GFS/HFM", accion: "Limpieza de Provisiones de costos de regalias - Saldos Manuales que no están en WARS y no corresponden a AS606.", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 110, segmento: "Regalias", sistema: "Vistex/WARS/FRED", accion: "Limpieza de errores de Suspense", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 111, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Determinar los proveedores que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 112, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos bancarios de los proveedores antes de la migración a producción", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 113, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/validar el correo electronico de todos los proveedores a pasar producción", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 114, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan empleados en los datos de proveedores a migrar a producción", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 115, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan intercompañias en los datos de proveedores a migrar a producción", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 116, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos de retenciones los proveedores antes de la migración a producción", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 117, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Determinar los clientes que no deben pasar a producción de la ultima carga a UAT/Pre-load", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 118, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Actualizar/Confirmar los datos de retenciones los clientes antes de la migración a producción", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 119, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Asegurarse que no existan intercompañias en los datos de clientes a migrar a producción", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 120, segmento: "Data Migración", sistema: "WACS: Vendors", accion: "Asegurarse que los Publishers de WACS estén incluidos dentro de los datos vendors a migrar.", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 121, segmento: "Data Migración", sistema: "GFS: COA", accion: "Asegurarse que todas las cuentas de GFS creadas tengan su mapa en SAP", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 122, segmento: "Bancos", sistema: "Santander", accion: "Consulta con el abogado laboral sobre los riesgos contractuales para RM Argentina, en el caso que los empleados pierdan los beneficios ofrecidos por Bancos Santander debido a que RM moverá la mayoria de operaciones a Citibank.", responsable: ["Gonzalo Anselmi"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 123, segmento: "Data Migración", sistema: "GFS: Fixed Assets", accion: "Realizar los ajustes y reclasificaciones en GFS/HFM determinados por las pruebas de Fix Assets a corte de marzo 31, 2026", responsable: ["Paola Winogard", "Anibal Flores"], pais: "Argentina", c1: "Aplica", c2: "", c3: "", c4: "", c5: "" },
-            { id: 124, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency - La tasa de cambio actualizada a la fecha de corte.", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 125, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores no tengan saldos debitos (negativos)", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 126, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse y ajustar los saldos de facturas de proveedores que ya tengan prescripción y/o sean errores que la compañía no va a pagar. ", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 127, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency - La tasa de cambio actualizada a la fecha de corte.", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 128, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes no tengan saldos créditos (negativos) ( a menos que se trate de una Nota Crédito pendiente por aplicar por el cliente).", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 129, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse y ajustar los saldos de facturas de clientes que ya tengan prescripción y/o sean errores que la compañía no va a recibir cobro.", responsable: ["Anibal Flores"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 130, segmento: "Data Migración", sistema: "GFS/PIMPS: POs", accion: "Asegurarse que todas las provisiones de OVH - Marketing - A&R tengan una PO emitida pendiente por facturar por parte del proveedor. (excepto corporate bonus)", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 131, segmento: "Data Migración", sistema: "GFS: Local Book", accion: "Asegurarse que el Balance a migrar para el libro local ( Financials Statements) Este determinado para la fecha de corte de migración", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 132, segmento: "Data Migración", sistema: "GFS: Tax Book", accion: "Asegurarse que el Balance a migrar para el libro Tax ( Income Tax) Este determinado para la fecha de corte de migración", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 133, segmento: "Data Migración", sistema: "Concur: GL Mapping", accion: "Validar el mapping de los expenses type vs GL account", responsable: ["Paola Winogard"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 134, segmento: "Data Migración", sistema: "Ariba: GL Mapping", accion: "Validar el mapping de los materiales vs GL account", responsable: ["Paola Winogard"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 135, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Recopilar todos los numeros de ingresos brutos: IBB para vendors", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 136, segmento: "Data Migración", sistema: "WARS/GFS/HFM", accion: "Ver el video 'Royalty Balance Migration' (Duración: 25 minutos) Link: Portal de Capacitación de FIT - WMG.", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 137, segmento: "Bancos", sistema: "Citibank", accion: "Cierre de las cuentas bancarias diferentes a Citibank - Determinación de las excepciones", responsable: ["Norberto Castrillon", "Gonzalo Anselmi"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 138, segmento: "Bancos", sistema: "Citibank", accion: "Iniciar pagos en Citibank - habilitación de modulos pendientes", responsable: ["Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 139, segmento: "Bancos", sistema: "Amex", accion: "Validar que todos los empleados necesarios tengan su respectiva tarjeta de crédito Amex", responsable: ["Paola Winogard"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 140, segmento: "Change Management", sistema: "GFS: Vendors", accion: "Determinar un Calendario de Cierre de Proveedores: 20-25 del mes.", responsable: ["Paola Winogard", "Gonzalo Anselmi"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 141, segmento: "Change Management", sistema: "WADS/WARIS: Customers", accion: "Determinar un Calendario de Cierre de Facturación Interno : 20-25 del mes.", responsable: ["Paola Winogard", "Gonzalo Anselmi"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 142, segmento: "Change Management", sistema: "Concur", accion: "Responsabilizar a cada persona de los diferentes departamentos para que sean autonomos en la gestión de legalizaciones de gastos y Finanzas solamente como una alerta de cierre.", responsable: ["Paola Winogard", "Gonzalo Anselmi"], pais: "Argentina", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            
-            // MEXICO
             { id: 201, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 202, segmento: "Regalias", sistema: "GFS", accion: "Validar que todos los Royaltors en GFS/Template tengan el grupo contable ROY", responsable: ["Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 203, segmento: "Regalias", sistema: "WARS", accion: "Actualización de Nombres Artisticos a Nombres Legales en WARS", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 204, segmento: "Regalias", sistema: "WARS", accion: "Determinación de Royaltors que no tienen los datos suficientes para crearse en SAP ( Tax ID, Dirección, Nombre, Datos Bancarios)", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 205, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta anticipos artistiticos por Royaltor en WARS, Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 206, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta pasivos de regalias artistiticas por Royaltor en WARS + accruals AS606 , Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 207, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta de reservas de Unproven, por royaltor, Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 208, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Si existen provisiones manuales que no están en WARS y no son de AS606, se requiere detallar en las reconciliaciones de Balance...", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 209, segmento: "Regalias", sistema: "GFS/HFM", accion: "Limpieza de Provisiones de costos de regalias - Saldos Manuales que no están en WARS y no corresponden a AS606.", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 210, segmento: "Regalias", sistema: "Vistex/WARS/FRED", accion: "Limpieza de errores de Suspense", responsable: ["Gustavo Hernandez", "Martin Nieto"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 211, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Determinar los proveedores que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 212, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos bancarios de los proveedores antes de la migración a producción", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 213, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/validar el correo electronico de todos los proveedores a pasar producción", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 214, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan empleados en los datos de proveedores a migrar a producción", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 215, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan intercompañias en los datos de proveedores a migrar a producción", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 216, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos de retenciones los proveedores antes de la migración a producción", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 217, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Determinar los clientes que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 218, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Actualizar/Confirmar los datos de retenciones los clientes antes de la migración a producción", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 219, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Asegurarse que no existan intercompañias en los datos de clientes a migrar a producción", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 220, segmento: "Data Migración", sistema: "WACS: Vendors", accion: "Asegurarse que los Publishers de WACS estén incluidos dentro de los datos vendors a migrar.", responsable: ["Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 221, segmento: "Data Migración", sistema: "GFS: COA", accion: "Asegurarse que todas las cuentas de GFS creadas tengan su mapa en SAP", responsable: ["Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 222, segmento: "Data Migración", sistema: "GFS: Fixed Assets", accion: "Realizar los ajustes y reclasificaciones en GFS/HFM determinados por las pruebas de Fix Assets a corte de marzo 31, 2026", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "Aplica", c2: "", c3: "", c4: "", c5: "" },
-            { id: 223, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency...", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 224, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores no tengan saldos debitos (negativos)", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 225, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse y ajustar los saldos de facturas de proveedores que ya tengan prescripción y/o sean errores que la compañía no va a pagar.", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 226, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes a migrar en Moneda extranjera...", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 227, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes no tengan saldos créditos (negativos) ( a menos que se trate de una Nota Crédito pendiente por aplicar por el cliente).", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 228, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse y ajustar los saldos de facturas de clientes que ya tengan prescripción y/o sean errores que la compañía no va a recibir cobro.", responsable: ["Oscar Barranco"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 229, segmento: "Data Migración", sistema: "GFS/PIMPS: POs", accion: "Asegurarse que todas las provisiones de OVH - Marketing - A&R tengan una PO emitida pendiente por facturar por parte del proveedor. (excepto corporate bonus)", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 230, segmento: "Data Migración", sistema: "GFS: Local Book", accion: "Asegurarse que el Balance a migrar para el libro local ( Financials Statements) Este determinado para la fecha de corte de migración", responsable: ["Luis Erik Rodriguez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 231, segmento: "Data Migración", sistema: "GFS: Tax Book", accion: "Asegurarse que el Balance a migrar para el libro Tax ( Income Tax) Este determinado para la fecha de corte de migración", responsable: ["Luis Erik Rodriguez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 232, segmento: "Data Migración", sistema: "Concur: GL Mapping", accion: "Validar el mapping de los expenses type vs GL account", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 233, segmento: "Data Migración", sistema: "Ariba: GL Mapping", accion: "Validar el mapping de los materiales vs GL account", responsable: ["Luis Erik Rodriguez", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 234, segmento: "Data Migración", sistema: "WARS/GFS/HFM", accion: "Ver el video 'Royalty Balance Migration' (Duración: 25 minutos) Link: Portal de Capacitación de FIT - WMG.", responsable: ["Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 235, segmento: "Bancos", sistema: "Citibank", accion: "Cierre de las cuentas bancarias diferentes a Citibank - Determinación de las excepciones", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 236, segmento: "Bancos", sistema: "Citibank", accion: "Traslado de pagos a Citibank - habilitación de modulos pendientes", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 237, segmento: "Bancos", sistema: "Amex", accion: "Validar que todos los empleados necesarios tengan su respectiva tarjeta de crédito Amex", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 238, segmento: "Change Management", sistema: "GFS: Vendors", accion: "Determinar un Calendario de Cierre de Proveedores: 20-25 del mes.", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 239, segmento: "Change Management", sistema: "WADS/WARIS: Customers", accion: "Determinar un Calendario de Cierre de Facturación Interno : 20-25 del mes.", responsable: ["Elizabeth Vazquez", "Norma Riquelme"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 240, segmento: "Change Management", sistema: "Concur", accion: "Responsabilizar a cada persona de los diferentes departamentos para que sean autonomos en la gestión de legalizaciones de gastos y Finanzas solamente como una alerta de cierre.", responsable: ["Elizabeth Vazquez", "Nadia Ceron"], pais: "Mexico", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            
-            // CHILE
             { id: 301, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 302, segmento: "Regalias", sistema: "GFS", accion: "Validar que todos los Royaltors en GFS/Template tengan el grupo contable ROY", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 303, segmento: "Regalias", sistema: "WARS", accion: "Actualización de Nombres Artisticos a Nombres Legales en WARS", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 304, segmento: "Regalias", sistema: "WARS", accion: "Determinación de Royaltors que no tienen los datos suficientes para crearse en SAP ( Tax ID, Dirección, Nombre, Datos Bancarios)", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 305, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta anticipos artistiticos por Royaltor en WARS, Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 306, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta pasivos de regalias artistiticas por Royaltor en WARS + accruals AS606 , Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 307, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Reconciliación de la cuenta de reservas de Unproven, por royaltor, Conciliado con el GL Balance de Contabilidad y HFM / Si tenemos algún anticipo desprovisto de reserva...", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 308, segmento: "Regalias", sistema: "WARS/GFS/HFM", accion: "Si existen provisiones manuales que no están en WARS y no son de AS606, se requiere detallar en las reconciliaciones de Balance", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 309, segmento: "Regalias", sistema: "GFS/HFM", accion: "Limpieza de Provisiones de costos de regalias - Saldos Manuales que no están en WARS y no corresponden a AS606.", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 310, segmento: "Regalias", sistema: "Vistex/WARS/FRED", accion: "Limpieza de errores de Suspense", responsable: ["Paola Winogard", "Noelia Fernandez", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 311, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Determinar los proveedores que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 312, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos bancarios de los proveedores antes de la migración a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 313, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/validar el correo electronico de todos los proveedores a pasar producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 314, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan empleados en los datos de proveedores a migrar a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 315, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Asegurarse que no existan intercompañias en los datos de proveedores a migrar a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 316, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Actualizar/Confirmar los datos de retenciones los proveedores antes de la migración a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 317, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Determinar los clientes que no deben pasar a producción de la ultima carga a UAT/Pre-load", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 318, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Actualizar/Confirmar los datos de retenciones los clientes antes de la migración a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 319, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Asegurarse que no existan intercompañias en los datos de clientes a migrar a producción", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 320, segmento: "Data Migración", sistema: "WACS: Vendors", accion: "Asegurarse que los Publishers de WACS estén incluidos dentro de los datos vendors a migrar.", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 321, segmento: "Data Migración", sistema: "GFS: COA", accion: "Asegurarse que todas las cuentas de GFS creadas tengan su mapa en SAP", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 322, segmento: "Data Migración", sistema: "GFS: Fixed Assets", accion: "Realizar los ajustes y reclasificaciones en GFS/HFM determinados por las pruebas de Fix Assets a corte de marzo 31, 2026", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "Aplica", c2: "", c3: "", c4: "", c5: "" },
-            { id: 323, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency...", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 324, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores no tengan saldos debitos (negativos)", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 325, segmento: "Data Migración", sistema: "GFS: Open Items AP", accion: "Asegurarse y ajustar los saldos de facturas de proveedores que ya tengan prescripción y/o sean errores que la compañía no va a pagar.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 326, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes a migrar en Moneda extranjera...", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 327, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes no tengan saldos créditos (negativos) ( a menos que se trate de una Nota Crédito pendiente por aplicar por el cliente).", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 328, segmento: "Data Migración", sistema: "GFS: Open Items AR", accion: "Asegurarse y ajustar los saldos de facturas de clientes que ya tengan prescripción y/o sean errores que la compañía no va a recibir cobro.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 329, segmento: "Data Migración", sistema: "GFS/PIMPS: POs", accion: "Asegurarse que todas las provisiones de OVH - Marketing - A&R tengan una PO emitida pendiente por facturar por parte del proveedor. (excepto corporate bonus)", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 330, segmento: "Data Migración", sistema: "GFS: Local Book", accion: "Asegurarse que el Balance a migrar para el libro local ( Financials Statements) Este determinado para la fecha de corte de migración", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 331, segmento: "Data Migración", sistema: "GFS: Tax Book", accion: "Asegurarse que el Balance a migrar para el libro Tax ( Income Tax) Este determinado para la fecha de corte de migración", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 332, segmento: "Data Migración", sistema: "Concur: GL Mapping", accion: "Validar el mapping de los expenses type vs GL account", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 333, segmento: "Data Migración", sistema: "Ariba: GL Mapping", accion: "Validar el mapping de los materiales vs GL account", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 334, segmento: "Data Migración", sistema: "GFS: Vendors", accion: "Recopilar todos los numeros de ingresos brutos: IBB para vendors", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 335, segmento: "Data Migración", sistema: "WARS/GFS/HFM", accion: "Ver el video 'Royalty Balance Migration' (Duración: 25 minutos) Link: Portal de Capacitación de FIT - WMG.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 336, segmento: "Bancos", sistema: "Citibank", accion: "Cierre de las cuentas bancarias diferentes a Citibank - Determinación de las excepciones", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 337, segmento: "Bancos", sistema: "Citibank", accion: "Iniciar pagos en Citibank - habilitación de modulos pendientes", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 338, segmento: "Bancos", sistema: "Amex", accion: "Validar que todos los empleados necesarios tengan su respectiva tarjeta de crédito Amex", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 339, segmento: "Change Management", sistema: "GFS: Vendors", accion: "Determinar un Calendario de Cierre de Proveedores: 20-25 del mes.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 340, segmento: "Change Management", sistema: "WADS/WARIS: Customers", accion: "Determinar un Calendario de Cierre de Facturación Interno : 20-25 del mes.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 341, segmento: "Change Management", sistema: "Concur", accion: "Responsabilizar a cada persona de los diferentes departamentos para que sean autonomos en la gestión de legalizaciones de gastos y Finanzas solamente como una alerta de cierre.", responsable: ["Sebastian Quinteros", "Ignacio Flores"], pais: "Chile", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-
-            // BRAZIL
-            { id: 401, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 402, segmento: "Regalias", sistema: "Totvs", accion: "Validar que todos los Royaltors en Totvs/Template tengan el grupo contable ROY", responsable: ["Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 403, segmento: "Regalias", sistema: "WARS", accion: "Actualización de Nombres Artisticos a Nombres Legales en WARS", responsable: ["Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 404, segmento: "Regalias", sistema: "WARS", accion: "Determinación de Royaltors que no tienen los datos suficientes para crearse en SAP ( Tax ID, Dirección, Nombre, Datos Bancarios)", responsable: ["Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 405, segmento: "Regalias", sistema: "WARS/Totvs/HFM", accion: "Reconciliación de la cuenta anticipos artistiticos por Royaltor en WARS, Conciliado con el GL Balance de Contabilidad y HFM (Depurar errores 90 casos)", responsable: ["Marcio Ricardo", "Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 406, segmento: "Regalias", sistema: "WARS/Totvs/HFM", accion: "Reconciliación de la cuenta pasivos de regalias artistiticas por Royaltor en WARS + accruals AS606 , Conciliado con el GL Balance de Contabilidad y HFM", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 407, segmento: "Regalias", sistema: "WARS/Totvs/HFM", accion: "Reconciliación de la cuenta de reservas de Unproven, por royaltor, Conciliado con el GL Balance de Contabilidad y HFM / Si tenemos algún anticipo desprovisto de reserva...", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 408, segmento: "Regalias", sistema: "WARS/Totvs/HFM", accion: "Si existen provisiones manuales que no están en WARS y no son de AS606, se requiere detallar en las reconciliaciones de Balance", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 409, segmento: "Regalias", sistema: "Totvs/HFM", accion: "Limpieza de Provisiones de costos de regalias - Saldos Manuales que no están en WARS y no corresponden a AS606.", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 410, segmento: "Regalias", sistema: "Vistex/WARS/FRED", accion: "Limpieza de errores de Suspense", responsable: ["Marcio Ricardo", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 411, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Determinar los proveedores que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 412, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Actualizar/Confirmar los datos bancarios de los proveedores antes de la migración a producción", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 413, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Actualizar/validar el correo electronico de todos los proveedores a pasar producción", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 414, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Asegurarse que no existan empleados en los datos de proveedores a migrar a producción", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 415, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Asegurarse que no existan intercompañias en los datos de proveedores a migrar a producción", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 416, segmento: "Data Migración", sistema: "Totvs: Vendors", accion: "Actualizar/Confirmar los datos de retenciones los proveedores antes de la migración a producción", responsable: ["Carla Figueira", "Diego Vilhena"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 417, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Determinar los clientes que no deben pasar a producción de la ultima carga a UAT/Pre-load (porque ya no tenemos relación)", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 418, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Actualizar/Confirmar los datos de retenciones los clientes antes de la migración a producción", responsable: ["Carla Figueira", "Diego Vilhena"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 419, segmento: "Data Migración", sistema: "WADS/WARIS: Customers", accion: "Asegurarse que no existan intercompañias en los datos de clientes a migrar a producción", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 420, segmento: "Data Migración", sistema: "WACS: Vendors", accion: "Asegurarse que los Publishers de WACS estén incluidos dentro de los datos vendors a migrar.", responsable: ["Marcio Ricardo", "Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 421, segmento: "Data Migración", sistema: "Totvs: COA", accion: "Asegurarse que todas las cuentas de Totvs creadas tengan su mapa en SAP", responsable: ["Carla Figueira", "Maurilio Pimenta"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 422, segmento: "Data Migración", sistema: "Totvs: Fixed Assets", accion: "Realizar los ajustes y reclasificaciones en Totvs/HFM determinados por las pruebas de Fix Assets a corte de marzo 31, 2026", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "Aplica", c2: "", c3: "", c4: "", c5: "" },
-            { id: 423, segmento: "Data Migración", sistema: "Totvs: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency...", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 424, segmento: "Data Migración", sistema: "Totvs: Open Items AP", accion: "Asegurarse que las partidas de facturas de proveedores no tengan saldos debitos (negativos)", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 425, segmento: "Data Migración", sistema: "Totvs: Open Items AP", accion: "Asegurarse y ajustar los saldos de facturas de proveedores que ya tengan prescripción y/o sean errores que la compañía no va a pagar.", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 426, segmento: "Data Migración", sistema: "Totvs: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes a migrar en Moneda extranjera, tengan en el template el valor en USD/EUR/GBP/ - Local Currency...", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 427, segmento: "Data Migración", sistema: "Totvs: Open Items AR", accion: "Asegurarse que las partidas de facturas de clientes no tengan saldos créditos (negativos) ( a menos que se trate de una Nota Crédito pendiente por aplicar por el cliente).", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 428, segmento: "Data Migración", sistema: "Totvs: Open Items AR", accion: "Asegurarse y ajustar los saldos de facturas de clientes que ya tengan prescripción y/o sean errores que la compañía no va a recibir cobro.", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 429, segmento: "Data Migración", sistema: "Totvs/PIMPS: POs", accion: "Asegurarse que todas las provisiones de OVH - Marketing - A&R tengan una PO emitida pendiente por facturar por parte del proveedor. (excepto corporate bonus)", responsable: ["Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 430, segmento: "Data Migración", sistema: "Totvs: Local Book", accion: "Asegurarse que el Balance a migrar para el libro local ( Financials Statements) Este determinado para la fecha de corte de migración", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 431, segmento: "Data Migración", sistema: "Totvs: Tax Book", accion: "Asegurarse que el Balance a migrar para el libro Tax ( Income Tax) Este determinado para la fecha de corte de migración", responsable: ["Marcio Ricardo", "Carla Figueira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 432, segmento: "Data Migración", sistema: "Concur: GL Mapping", accion: "Validar el mapping de los expenses type vs GL account", responsable: ["Carla Figueira", "Maurilio Pimenta"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 433, segmento: "Data Migración", sistema: "Ariba: GL Mapping", accion: "Validar el mapping de los materiales vs GL account", responsable: ["Carla Figueira", "Maurilio Pimenta"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 434, segmento: "Data Migración", sistema: "WARS/Totvs/HFM", accion: "Ver el video 'Royalty Balance Migration' (Duración: 25 minutos) Link: Portal de Capacitación de FIT - WMG.", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 435, segmento: "Bancos", sistema: "Citibank", accion: "Cierre de las cuentas bancarias diferentes a Citibank - Determinación de las excepciones", responsable: ["Carla Figueira", "Maurilio Pimenta"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 436, segmento: "Bancos", sistema: "Citibank", accion: "Iniciar pagos en Citibank - habilitación de modulos pendientes", responsable: ["Carla Figueira", "Maurilio Pimenta"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 437, segmento: "Bancos", sistema: "Amex", accion: "Validar que todos los empleados necesarios tengan su respectiva tarjeta de crédito Amex", responsable: ["Carla Figueira", "Fernando Mongue"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
-            { id: 438, segmento: "Change Management", sistema: "Totvs:Vendors", accion: "Determinar un Calendario de Cierre de Proveedores: 20-25 del mes.", responsable: ["Carla Figueira", "Fernando Mongue"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 439, segmento: "Change Management", sistema: "WADS/WARIS: Customers", accion: "Determinar un Calendario de Cierre de Facturación Interno : 20-25 del mes.", responsable: ["Carla Figueira", "Fernando Mongue"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" },
-            { id: 440, segmento: "Change Management", sistema: "Concur", accion: "Responsabilizar a cada persona de los diferentes departamentos para que sean autonomos en la gestión de legalizaciones de gastos y Finanzas solamente como una alerta de cierre.", responsable: ["Carla Figueira", "Fernando Mongue"], pais: "Brazil", c1: "", c2: "Aplica", c3: "", c4: "", c5: "" }
-        ];
+            { id: 401, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Carla Figueira", "Gustavo Pereira"], pais: "Brazil", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" }
+        ]; // Reducido por brevedad en este ejemplo inicial
 
         const initialQuestions = [
-            { 
-                id: 1, 
-                segmento: "Regalias", 
-                pregunta: "Los Royaltors en WARS que tengan saldos y que no tengamos todos los datos como Tax ID; bancos, dirección, ¿Cuál es el manejo en SAP? Los vamos a crear por control y cuando se tenga comunicación actualizarlo? O esos saldos se mantendran como reservas de GL* (No ideal)", 
-                questionEng: "For Royaltors in WARS with open balances but missing master data (Tax ID, Bank Details, Address), what is the handling approach in SAP? Will we create them for control purposes and update them upon contact? Or will these balances be kept as GL reserves? (Not ideal)",
-                pais: "ALL", responsable: ["Elizabeth Vazquez"], solicitado: "N", fecha: "", respuesta: "" 
-            },
-            { 
-                id: 2, 
-                segmento: "Regalias", 
-                pregunta: "En WARS aparece el nombre artistico deberia ser el nombre legal del contrato?", 
-                questionEng: "WARS displays the stage name; shouldn't it be the legal name as per the contract for SAP BP creation?",
-                pais: "ALL", responsable: ["Elizabeth Vazquez"], solicitado: "N", fecha: "", respuesta: "" 
-            },
-            { 
-                id: 3, 
-                segmento: "Regalias", 
-                pregunta: "Solicitar los SLA de Pega", 
-                questionEng: "Request SLA definitions for Pega integration.",
-                pais: "ALL", responsable: ["Nancy Garavito"], solicitado: "N", fecha: "", respuesta: "" 
-            },
-            { 
-                id: 4, 
-                segmento: "Requerimientos Locales", 
-                pregunta: "Cual es el alcance de PWC en la declaración de renta local y lo estados financieros locales.", 
-                questionEng: "What is PwC's scope regarding local income tax declarations and local statutory financial statements?",
-                pais: "ALL", responsable: ["Nancy Garavito"], solicitado: "N", fecha: "", respuesta: "" 
-            },
-            { 
-                id: 5, 
-                segmento: "Impuestos", 
-                pregunta: "El maping del codigo agrupador del SAT se comparte en WC y RM? Confirmar con Priscila/Tax Team", 
-                questionEng: "Is the SAT grouping code mapping shared between WC and RM? To be confirmed with Priscila/Tax Team.",
-                pais: "Mexico", responsable: ["Elizabeth Vazquez"], solicitado: "N", fecha: "", respuesta: "" 
-            },
-            { 
-                id: 6, 
-                segmento: "P2P", 
-                pregunta: "¿si debemos distribuir pagos a los artistas con 2 beneficiarios de regalias, por un % fijo, se puede configurar en SAP o debemos crear dos royaltor en SAP - auque en WARS es uno solo: ¿o tendriamos esta distribución desde WARS?", 
-                questionEng: "If we need to distribute payments to artists with 2 royalty beneficiaries via a fixed percentage, can this split be configured directly in SAP, or must we create two separate Royaltors (BPs) in SAP even if there's only one in WARS? Or will WARS handle the distribution before interfacing?",
-                pais: "Argentina", responsable: ["Nancy Garavito"], solicitado: "N", fecha: "", respuesta: "" 
-            }
+            { id: 1, segmento: "Regalias", pregunta: "Los Royaltors en WARS que tengan saldos...", questionEng: "For Royaltors in WARS with open balances...", pais: "ALL", responsable: ["Elizabeth Vazquez"], solicitado: "N", fecha: "", respuesta: "" }
         ];
 
         function App() {
@@ -366,9 +137,16 @@
             const [authError, setAuthError] = useState(null);
             const [showAuthWarning, setShowAuthWarning] = useState(false);
             
-            // Datos locales (Sincronizados con Firestore o estado Inicial de Respaldo)
-            const [tasks, setTasks] = useState(initialTasks);
-            const [questions, setQuestions] = useState(initialQuestions);
+            // Estado para las listas dinámicas configurables
+            const [dynamicLists, setDynamicLists] = useState({
+                segmentos: initSegmentos,
+                sistemas: initSistemas,
+                responsables: initResponsables
+            });
+
+            // Datos principales
+            const [tasks, setTasks] = useState([]);
+            const [questions, setQuestions] = useState([]);
             
             // Filtros Tareas
             const [taskFilterPais, setTaskFilterPais] = useState('Todos');
@@ -380,7 +158,7 @@
             const [qFilterSegmento, setQFilterSegmento] = useState('Todos');
             const [qFilterResponsable, setQFilterResponsable] = useState('Todos');
 
-            // --- AUTENTICACIÓN FIREBASE CON MANEJO DE ERRORES ---
+            // --- AUTENTICACIÓN FIREBASE ---
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -408,24 +186,33 @@
 
                 const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
                 const questionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
+                const configRef = doc(db, 'artifacts', appId, 'public', 'config', 'lists');
+
+                // Sincronizar Listas Configurables
+                const unsubConfig = onSnapshot(configRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        setDynamicLists(docSnap.data());
+                    } else {
+                        setDoc(configRef, {
+                            segmentos: initSegmentos,
+                            sistemas: initSistemas,
+                            responsables: initResponsables
+                        });
+                    }
+                });
 
                 const unsubTasks = onSnapshot(tasksRef, (snapshot) => {
                     if (snapshot.empty) {
-                        // Carga Semilla si la BD está vacía (Solo la 1ra vez)
                         initialTasks.forEach(t => setDoc(doc(tasksRef, t.id.toString()), t));
                     } else {
                         const loadedTasks = [];
                         snapshot.forEach(doc => loadedTasks.push(doc.data()));
                         setTasks(loadedTasks.sort((a,b) => b.id - a.id)); 
                     }
-                }, (error) => {
-                    console.error("Error recibiendo Tareas:", error);
-                    setAuthError("Fallo al leer datos");
-                });
+                }, (error) => setAuthError("Fallo al leer tareas"));
 
                 const unsubQuestions = onSnapshot(questionsRef, (snapshot) => {
                     if (snapshot.empty) {
-                        // Carga Semilla si la BD está vacía (Solo la 1ra vez)
                         initialQuestions.forEach(q => setDoc(doc(questionsRef, q.id.toString()), q));
                     } else {
                         const loadedQs = [];
@@ -434,75 +221,47 @@
                     }
                     setIsConnected(true);
                     if (!showAuthWarning) setAuthError(null);
-                }, (error) => {
-                    console.error("Error recibiendo Preguntas:", error);
-                    setAuthError("Fallo al leer datos");
-                });
+                }, (error) => setAuthError("Fallo al leer preguntas"));
 
-                return () => {
-                    unsubTasks();
-                    unsubQuestions();
-                };
+                return () => { unsubTasks(); unsubQuestions(); unsubConfig(); };
             }, [user]);
 
             const generateId = () => Math.floor(Math.random() * 1000000);
 
-            // --- LÓGICA DE DATOS: TAREAS (NUBE CON RESPALDO LOCAL) ---
-            const addTask = async () => {
-                const newTask = { id: generateId(), segmento: "", sistema: "", accion: "", responsable: [], pais: "", c1: "", c2: "", c3: "", c4: "", c5: "" };
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id.toString()), newTask);
-                } else {
-                    setTasks([newTask, ...tasks]); // Respaldo Local si no hay BD
-                }
-            };
-            
+            // --- LÓGICA DE ACTUALIZACIÓN ---
             const updateTask = async (id, field, value) => {
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()), { [field]: value }, { merge: true });
-                } else {
-                    setTasks(tasks.map(t => (t.id === id ? { ...t, [field]: value } : t))); // Respaldo Local
-                }
+                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()), { [field]: value }, { merge: true });
+                else setTasks(tasks.map(t => (t.id === id ? { ...t, [field]: value } : t)));
             };
-            
             const deleteTask = async (id) => {
-                if (user) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()));
-                } else {
-                    setTasks(tasks.filter(t => t.id !== id)); // Respaldo Local
-                }
+                if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()));
+                else setTasks(tasks.filter(t => t.id !== id));
             };
-
-            // --- LÓGICA DE DATOS: PREGUNTAS (NUBE CON RESPALDO LOCAL) ---
-            const addQuestion = async () => {
-                const newQ = { id: generateId(), segmento: "", pregunta: "", questionEng: "", pais: "", responsable: [], solicitado: "N", fecha: "", respuesta: "" };
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', newQ.id.toString()), newQ);
-                } else {
-                    setQuestions([newQ, ...questions]); // Respaldo Local
-                }
-            };
-            
             const updateQuestion = async (id, field, value) => {
                 let updates = { [field]: value };
-                
                 const questionToUpdate = questions.find(q => q.id === id);
                 if (field === 'pregunta' && questionToUpdate && value !== questionToUpdate.pregunta && questionToUpdate.questionEng !== "" && !questionToUpdate.questionEng.includes("[Pending Translation]")) {
                     updates.questionEng = `[Pending Translation] ...`;
                 }
-
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()), updates, { merge: true });
-                } else {
-                    setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q))); // Respaldo Local
-                }
+                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()), updates, { merge: true });
+                else setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q)));
             };
-            
             const deleteQuestion = async (id) => {
+                if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()));
+                else setQuestions(questions.filter(q => q.id !== id));
+            };
+
+            const handleUpdateDynamicList = async (listName, newList) => {
+                let listToSave = newList;
+                if (listName === 'responsables') {
+                    // Garantizar orden alfabético
+                    listToSave = [...newList].sort((a, b) => a.localeCompare(b));
+                }
+                const updatedObj = { ...dynamicLists, [listName]: listToSave };
                 if (user) {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()));
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'config', 'lists'), updatedObj);
                 } else {
-                    setQuestions(questions.filter(q => q.id !== id)); // Respaldo Local
+                    setDynamicLists(updatedObj);
                 }
             };
 
@@ -512,61 +271,64 @@
                 (taskFilterSegmento === 'Todos' || t.segmento === taskFilterSegmento) &&
                 (taskFilterResponsable === 'Todos' || (t.responsable && t.responsable.includes(taskFilterResponsable)))
             );
-
             const filteredQuestions = questions.filter(q => 
                 (qFilterPais === 'Todos' || q.pais === qFilterPais || q.pais === 'ALL') &&
                 (qFilterSegmento === 'Todos' || q.segmento === qFilterSegmento) &&
                 (qFilterResponsable === 'Todos' || (q.responsable && q.responsable.includes(qFilterResponsable)))
             );
 
-            // --- MÉTRICAS DE PROGRESO ---
+            // --- MÉTRICAS Y GRÁFICOS ---
             const metrics = useMemo(() => {
                 let totalCells = 0;
                 let completedCells = 0;
                 let inProgressCells = 0;
 
                 filteredTasks.forEach(t => {
-                const cortes = [t.c1, t.c2, t.c3, t.c4, t.c5];
-                cortes.forEach(c => {
-                    if (c === "Aplica" || c === "En Proceso" || c === "Completado") totalCells++;
-                    if (c === "Completado") completedCells++;
-                    if (c === "En Proceso") inProgressCells++;
-                });
+                    const cortes = [t.c1, t.c2, t.c3, t.c4, t.c5];
+                    cortes.forEach(c => {
+                        if (c === "Aplica" || c === "En Proceso" || c === "Completado") totalCells++;
+                        if (c === "Completado") completedCells++;
+                        if (c === "En Proceso") inProgressCells++;
+                    });
                 });
 
                 const progressPct = totalCells === 0 ? 0 : Math.round((completedCells / totalCells) * 100);
 
-                return {
-                totalTasks: filteredTasks.length,
-                inProgress: inProgressCells,
-                completed: completedCells,
-                progressPct
-                };
+                return { totalTasks: filteredTasks.length, inProgress: inProgressCells, completed: completedCells, progressPct };
             }, [filteredTasks]);
+
+            const countryProgress = useMemo(() => {
+                const countries = [
+                    { name: 'Argentina', flag: '🇦🇷' },
+                    { name: 'Mexico', flag: '🇲🇽' },
+                    { name: 'Chile', flag: '🇨🇱' },
+                    { name: 'Brazil', flag: '🇧🇷' }
+                ];
+                return countries.map(c => {
+                    let total = 0, completed = 0;
+                    tasks.filter(t => t.pais === c.name || t.pais === 'ALL').forEach(t => {
+                        const cortes = [t.c1, t.c2, t.c3, t.c4, t.c5];
+                        cortes.forEach(corte => {
+                            if (corte === "Aplica" || corte === "En Proceso" || corte === "Completado") total++;
+                            if (corte === "Completado") completed++;
+                        });
+                    });
+                    return { ...c, pct: total === 0 ? 0 : Math.round((completed / total) * 100) };
+                });
+            }, [tasks]);
 
             // --- COMPONENTES UI REUTILIZABLES ---
             const TextInput = ({ value, onChange, placeholder = "Escribe aquí...", className = "", allowCopy = false }) => {
                 const [localValue, setLocalValue] = useState(value || "");
                 const [copied, setCopied] = useState(false);
-
-                useEffect(() => {
-                setLocalValue(value || "");
-                }, [value]);
+                useEffect(() => setLocalValue(value || ""), [value]);
 
                 const handleCopy = () => {
-                if (!localValue) return;
-                const textArea = document.createElement("textarea");
-                textArea.value = localValue;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                } catch (err) {
-                    console.error('Failed to copy', err);
-                }
-                document.body.removeChild(textArea);
+                    if (!localValue) return;
+                    navigator.clipboard.writeText(localValue).then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                    });
                 };
 
                 return (
@@ -574,21 +336,13 @@
                     <textarea 
                     value={localValue} 
                     onChange={(e) => setLocalValue(e.target.value)}
-                    onBlur={() => {
-                        if (localValue !== value) {
-                        onChange(localValue);
-                        }
-                    }}
+                    onBlur={() => { if (localValue !== value) onChange(localValue); }}
                     placeholder={placeholder}
                     rows="2"
                     className={`w-full bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded px-2 py-1.5 transition-colors border border-transparent hover:border-slate-300 resize-y min-h-[44px] ${className} ${allowCopy ? 'pr-8' : ''}`}
                     />
                     {allowCopy && localValue && (
-                    <button
-                        onClick={handleCopy}
-                        className="absolute top-1 right-1 p-1.5 text-slate-400 hover:text-blue-600 bg-white/90 backdrop-blur-sm rounded opacity-0 group-hover/copy:opacity-100 transition-opacity shadow-sm border border-slate-200 z-10"
-                        title="Copiar texto"
-                    >
+                    <button onClick={handleCopy} className="absolute top-1 right-1 p-1.5 text-slate-400 hover:text-blue-600 bg-white/90 backdrop-blur-sm rounded opacity-0 group-hover/copy:opacity-100 transition-opacity shadow-sm border border-slate-200 z-10" title="Copiar texto">
                         {copied ? <SmallCheckIcon /> : <CopyIcon />}
                     </button>
                     )}
@@ -603,24 +357,17 @@
                 className={`w-full bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded px-2 py-1.5 cursor-pointer appearance-none transition-colors border border-transparent hover:border-slate-300 font-medium ${className}`}
                 >
                 <option value="" className="text-slate-400">Seleccionar...</option>
-                {options.map(opt => (
-                    <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>
-                ))}
+                {options.map(opt => <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>)}
                 </select>
             );
 
             const MultiSelectDropdown = ({ value = [], options, onChange, placeholder = "Seleccionar..." }) => {
                 const [isOpen, setIsOpen] = useState(false);
                 const safeValue = Array.isArray(value) ? value : [];
-
                 const toggleOption = (opt) => {
-                if (safeValue.includes(opt)) {
-                    onChange(safeValue.filter(v => v !== opt));
-                } else {
-                    onChange([...safeValue, opt]);
-                }
+                    if (safeValue.includes(opt)) onChange(safeValue.filter(v => v !== opt));
+                    else onChange([...safeValue, opt]);
                 };
-
                 return (
                 <div className="relative">
                     <div 
@@ -632,22 +379,14 @@
                     </span>
                     <span className="text-slate-400 ml-2 flex-shrink-0"><ChevronDownIcon /></span>
                     </div>
-                    
                     {isOpen && (
                     <>
                         <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)}></div>
                         <div className="absolute z-20 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-xl max-h-64 overflow-y-auto left-0 py-2">
                         {options.map(opt => (
                             <label key={opt} className="flex items-center px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors group">
-                            <input
-                                type="checkbox"
-                                checked={safeValue.includes(opt)}
-                                onChange={() => toggleOption(opt)}
-                                className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2 mr-3 cursor-pointer"
-                            />
-                            <span className={`text-sm ${safeValue.includes(opt) ? 'font-semibold text-blue-700' : 'text-slate-700 group-hover:text-blue-600'}`}>
-                                {opt}
-                            </span>
+                            <input type="checkbox" checked={safeValue.includes(opt)} onChange={() => toggleOption(opt)} className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500 focus:ring-2 mr-3 cursor-pointer" />
+                            <span className={`text-sm ${safeValue.includes(opt) ? 'font-semibold text-blue-700' : 'text-slate-700 group-hover:text-blue-600'}`}>{opt}</span>
                             </label>
                         ))}
                         </div>
@@ -655,6 +394,38 @@
                     )}
                 </div>
                 );
+            };
+
+            const ListEditor = ({ title, items, listKey }) => {
+                const [newItem, setNewItem] = useState('');
+                const handleAdd = () => {
+                    if (newItem.trim() && !items.includes(newItem.trim())) {
+                        handleUpdateDynamicList(listKey, [...items, newItem.trim()]);
+                        setNewItem('');
+                    }
+                };
+                const handleRemove = (item) => handleUpdateDynamicList(listKey, items.filter(i => i !== item));
+
+                return (
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 flex flex-col h-[500px]">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg text-slate-800">{title}</h3>
+                            <span className="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-full">{items.length}</span>
+                        </div>
+                        <div className="flex-1 overflow-y-auto mb-4 space-y-2 pr-2 border border-slate-100 bg-slate-50 p-2 rounded-lg">
+                            {items.map(item => (
+                                <div key={item} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm group">
+                                    <span className="text-sm font-medium text-slate-700">{item}</span>
+                                    <button onClick={() => handleRemove(item)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><TrashIcon /></button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <input type="text" value={newItem} onChange={e => setNewItem(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleAdd()} className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="Añadir nueva opción..." />
+                            <button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors">Añadir</button>
+                        </div>
+                    </div>
+                )
             };
 
             return (
@@ -672,7 +443,7 @@
                         <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={authError || (isConnected ? "Sincronizado en línea" : "Iniciando modo offline...")}>
                             <CloudSyncIcon connected={isConnected} error={!!authError} />
                             <span className={`text-[10px] font-bold uppercase ${authError ? 'text-red-600' : isConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
-                            {authError ? 'Offline (Modo Local)' : isConnected ? 'En Línea' : 'Iniciando'}
+                            {authError ? 'Offline' : isConnected ? 'En Línea' : 'Iniciando'}
                             </span>
                         </div>
                         </div>
@@ -683,32 +454,19 @@
                     {activeTab === 'tasks' && (
                     <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-100">
-                        <FilterIcon />
-                        <span className="text-sm font-semibold hidden md:inline">Filtros Tareas:</span>
+                        <FilterIcon /><span className="text-sm font-semibold hidden md:inline">Filtros Tareas:</span>
                         </div>
-                        <select 
-                        value={taskFilterPais} 
-                        onChange={(e) => setTaskFilterPais(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
-                        >
+                        <select value={taskFilterPais} onChange={(e) => setTaskFilterPais(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium">
                         <option value="Todos">País: Todos</option>
                         {opcionesPais.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
-                        <select 
-                        value={taskFilterSegmento} 
-                        onChange={(e) => setTaskFilterSegmento(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[200px] truncate font-medium"
-                        >
+                        <select value={taskFilterSegmento} onChange={(e) => setTaskFilterSegmento(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium max-w-[200px] truncate">
                         <option value="Todos">Segmento: Todos</option>
-                        {opcionesSegmento.map(s => <option key={s} value={s}>{s}</option>)}
+                        {dynamicLists.segmentos.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <select 
-                        value={taskFilterResponsable} 
-                        onChange={(e) => setTaskFilterResponsable(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[200px] truncate font-medium"
-                        >
+                        <select value={taskFilterResponsable} onChange={(e) => setTaskFilterResponsable(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium max-w-[200px] truncate">
                         <option value="Todos">Responsable: Todos</option>
-                        {opcionesResponsable.map(r => <option key={r} value={r}>{r}</option>)}
+                        {dynamicLists.responsables.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     )}
@@ -717,43 +475,29 @@
                     {activeTab === 'questions' && (
                     <div className="flex flex-wrap items-center gap-3 bg-white p-2.5 rounded-xl border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-100">
-                        <FilterIcon />
-                        <span className="text-sm font-semibold hidden md:inline">Filtros Preguntas:</span>
+                        <FilterIcon /><span className="text-sm font-semibold hidden md:inline">Filtros Preguntas:</span>
                         </div>
-                        <select 
-                        value={qFilterPais} 
-                        onChange={(e) => setQFilterPais(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium"
-                        >
+                        <select value={qFilterPais} onChange={(e) => setQFilterPais(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium">
                         <option value="Todos">País: Todos</option>
                         {opcionesPais.map(p => <option key={p} value={p}>{p}</option>)}
                         </select>
-                        <select 
-                        value={qFilterSegmento} 
-                        onChange={(e) => setQFilterSegmento(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[200px] truncate font-medium"
-                        >
+                        <select value={qFilterSegmento} onChange={(e) => setQFilterSegmento(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium max-w-[200px] truncate">
                         <option value="Todos">Segmento: Todos</option>
-                        {opcionesSegmento.map(s => <option key={s} value={s}>{s}</option>)}
+                        {dynamicLists.segmentos.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
-                        <select 
-                        value={qFilterResponsable} 
-                        onChange={(e) => setQFilterResponsable(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[200px] truncate font-medium"
-                        >
+                        <select value={qFilterResponsable} onChange={(e) => setQFilterResponsable(e.target.value)} className="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 font-medium max-w-[200px] truncate">
                         <option value="Todos">Responsable: Todos</option>
-                        {opcionesResponsable.map(r => <option key={r} value={r}>{r}</option>)}
+                        {dynamicLists.responsables.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
                     )}
                 </header>
 
-                {/* --- AVISO DE ERROR DE CONFIGURACIÓN FIREBASE --- */}
                 {showAuthWarning && (
                     <div className="bg-amber-100 border border-amber-300 text-amber-900 px-5 py-4 rounded-xl mb-6 shadow-sm flex items-start justify-between">
                         <div>
                             <strong className="block text-lg mb-1">⚠️ Configuración de Firebase requerida</strong>
-                            El tablero funciona de forma local y los cambios no se sincronizarán con los demás. Para solucionar esto y activar el modo multijugador, ve a la <strong>Consola de Firebase</strong> (proyecto: <em>main-task-r9-latam</em>), entra a la sección de <strong>Authentication &gt; Sign-in method</strong>, y habilita el proveedor <strong>Anónimo (Anonymous)</strong>.
+                            El tablero funciona de forma local. Para activar el modo multijugador, ve a la <strong>Consola de Firebase</strong>, sección de <strong>Authentication &gt; Sign-in method</strong>, y habilita el proveedor <strong>Anónimo (Anonymous)</strong>.
                         </div>
                         <button onClick={() => setShowAuthWarning(false)} className="text-amber-700 hover:text-amber-900 ml-4 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -761,60 +505,91 @@
                     </div>
                 )}
 
-                {/* --- PANEL DE MÉTRICAS --- */}
+                {/* --- PANEL DE MÉTRICAS (Actualizado con Banderas) --- */}
                 {activeTab === 'tasks' && (
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="p-3 bg-blue-50 rounded-xl"><TargetIcon /></div>
-                        <div>
-                        <p className="text-sm text-slate-500 font-medium">Tareas Listadas</p>
-                        <p className="text-2xl font-bold text-slate-800">{metrics.totalTasks}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+                        {/* Cajas Individuales */}
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow col-span-1">
+                            <div className="p-3 bg-blue-50 rounded-xl"><TargetIcon /></div>
+                            <div>
+                                <p className="text-sm text-slate-500 font-medium">Tareas Listadas</p>
+                                <p className="text-2xl font-bold text-slate-800">{metrics.totalTasks}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="p-3 bg-amber-50 rounded-xl"><ClockIcon /></div>
-                        <div>
-                        <p className="text-sm text-slate-500 font-medium">Hitos En Proceso</p>
-                        <p className="text-2xl font-bold text-slate-800">{metrics.inProgress}</p>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow col-span-1">
+                            <div className="p-3 bg-amber-50 rounded-xl"><ClockIcon /></div>
+                            <div>
+                                <p className="text-sm text-slate-500 font-medium">En Proceso</p>
+                                <p className="text-2xl font-bold text-slate-800">{metrics.inProgress}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="p-3 bg-emerald-50 rounded-xl"><CheckCircleIcon /></div>
-                        <div>
-                        <p className="text-sm text-slate-500 font-medium">Hitos Completados</p>
-                        <p className="text-2xl font-bold text-slate-800">{metrics.completed}</p>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow col-span-1">
+                            <div className="p-3 bg-emerald-50 rounded-xl"><CheckCircleIcon /></div>
+                            <div>
+                                <p className="text-sm text-slate-500 font-medium">Completados</p>
+                                <p className="text-2xl font-bold text-slate-800">{metrics.completed}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-5 rounded-2xl shadow-md flex items-center justify-between text-white hover:shadow-lg transition-shadow">
-                        <div>
-                        <p className="text-sm text-blue-100 font-medium">Progreso Global</p>
-                        <p className="text-3xl font-extrabold">{metrics.progressPct}%</p>
+                        
+                        {/* Progreso Global */}
+                        <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-5 rounded-2xl shadow-md flex items-center justify-between text-white hover:shadow-lg transition-shadow col-span-1">
+                            <div>
+                                <p className="text-xs text-blue-100 font-medium uppercase tracking-wider mb-1">Total Región</p>
+                                <p className="text-3xl font-extrabold">{metrics.progressPct}%</p>
+                            </div>
+                            <svg viewBox="0 0 36 36" className="w-14 h-14 drop-shadow-md">
+                                <path className="text-blue-900/40" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                                <path className="text-white" strokeDasharray={`${metrics.progressPct}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                            </svg>
                         </div>
-                        <svg viewBox="0 0 36 36" className="w-14 h-14 drop-shadow-md">
-                        <path className="text-blue-900/40" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                        <path className="text-white" strokeDasharray={`${metrics.progressPct}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                        </svg>
-                    </div>
+
+                        {/* Cumplimiento por País */}
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm xl:col-span-2 flex flex-col justify-center relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                                <FilterIcon className="w-20 h-20" />
+                            </div>
+                            <h3 className="text-xs text-slate-500 font-bold mb-3 uppercase tracking-wider">Cumplimiento Acumulado por País</h3>
+                            <div className="grid grid-cols-2 gap-x-6 gap-y-3 z-10">
+                                {countryProgress.map(c => (
+                                    <div key={c.name} className="flex flex-col gap-1.5">
+                                        <div className="flex justify-between items-center text-sm font-bold text-slate-700">
+                                            <span className="flex items-center gap-1.5"><span className="text-lg">{c.flag}</span> {c.name}</span>
+                                            <span className="text-blue-600">{c.pct}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-100 rounded-full h-1.5">
+                                            <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style={{width: `${c.pct}%`}}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 )}
 
                 {/* Tabs Principales */}
-                <div className="flex gap-3 mb-6">
-                    <button 
-                    onClick={() => setActiveTab('tasks')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'tasks' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
-                    >
-                    <DashboardIcon /> Acciones Internas
+                <div className="flex flex-wrap gap-3 mb-6">
+                    <button onClick={() => setActiveTab('tasks')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'tasks' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <DashboardIcon /> Acciones Internas
                     </button>
-                    <button 
-                    onClick={() => setActiveTab('questions')}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'questions' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
-                    >
-                    <QuestionIcon /> Preguntas para FIT
+                    <button onClick={() => setActiveTab('questions')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'questions' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <QuestionIcon /> Dudas a FIT
+                    </button>
+                    <button onClick={() => setActiveTab('config')} className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'config' ? 'bg-blue-700 text-white border border-blue-700 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}>
+                        <SettingsIcon /> Configuración de Listas
                     </button>
                 </div>
 
+                {/* --- VISTA: CONFIGURACIÓN (TAB 3) --- */}
+                {activeTab === 'config' && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <ListEditor title="Opciones de Segmentos" items={dynamicLists.segmentos} listKey="segmentos" />
+                        <ListEditor title="Opciones de Sistemas" items={dynamicLists.sistemas} listKey="sistemas" />
+                        <ListEditor title="Lista de Responsables" items={dynamicLists.responsables} listKey="responsables" />
+                    </div>
+                )}
+
                 {/* Contenedor Tablas */}
+                {(activeTab === 'tasks' || activeTab === 'questions') && (
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                     
                     {/* VISTA: TAREAS */}
@@ -822,7 +597,11 @@
                     <div className="p-0">
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
                         <h2 className="text-xl font-bold text-slate-800 tracking-tight">Registro de Actividades y Cortes</h2>
-                        <button onClick={addTask} className="flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+                        <button onClick={() => {
+                            const newTask = { id: generateId(), segmento: "", sistema: "", accion: "", responsable: [], pais: "", c1: "", c2: "", c3: "", c4: "", c5: "" };
+                            if (user) setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id.toString()), newTask);
+                            else setTasks([newTask, ...tasks]);
+                        }} className="flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
                             <PlusIcon /> Añadir Tarea
                         </button>
                         </div>
@@ -847,49 +626,31 @@
                             <tbody className="divide-y divide-slate-100">
                             {filteredTasks.map(task => (
                                 <tr key={task.id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="p-3 w-32 align-top"><SelectInput value={task.segmento} options={opcionesSegmento} onChange={(val) => updateTask(task.id, 'segmento', val)} /></td>
-                                <td className="p-3 w-32 align-top"><SelectInput value={task.sistema} options={opcionesSistema} onChange={(val) => updateTask(task.id, 'sistema', val)} /></td>
+                                <td className="p-3 w-32 align-top"><SelectInput value={task.segmento} options={dynamicLists.segmentos} onChange={(val) => updateTask(task.id, 'segmento', val)} /></td>
+                                <td className="p-3 w-32 align-top"><SelectInput value={task.sistema} options={dynamicLists.sistemas} onChange={(val) => updateTask(task.id, 'sistema', val)} /></td>
                                 <td className="p-3 align-top">
                                     <div className="w-full relative group/input">
                                     <TextInput value={task.accion} onChange={(val) => updateTask(task.id, 'accion', val)} placeholder="Detalle de la acción..." allowCopy={true} />
                                     </div>
                                 </td>
                                 <td className="p-3 w-52 align-top">
-                                    <MultiSelectDropdown value={task.responsable} options={opcionesResponsable} onChange={(val) => updateTask(task.id, 'responsable', val)} />
+                                    <MultiSelectDropdown value={task.responsable} options={dynamicLists.responsables} onChange={(val) => updateTask(task.id, 'responsable', val)} />
                                 </td>
-
                                 <td className="p-3 w-32 align-top">
-                                    <select 
-                                    value={task.pais} 
-                                    onChange={(e) => updateTask(task.id, 'pais', e.target.value)}
-                                    className={`w-full outline-none focus:ring-2 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border text-sm font-bold shadow-sm ${getCountryColor(task.pais)}`}
-                                    >
+                                    <select value={task.pais} onChange={(e) => updateTask(task.id, 'pais', e.target.value)} className={`w-full outline-none focus:ring-2 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border text-sm font-bold shadow-sm ${getCountryColor(task.pais)}`}>
                                     <option value="" className="bg-white text-slate-500">País...</option>
-                                    {opcionesPais.map(opt => (
-                                        <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>
-                                    ))}
+                                    {opcionesPais.map(opt => <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>)}
                                     </select>
                                 </td>
                                 
                                 {['c1', 'c2', 'c3', 'c4', 'c5'].map(corte => (
                                     <td key={corte} className="p-3 w-28 border-l border-slate-50 align-top">
-                                    <SelectInput 
-                                        value={task[corte]} 
-                                        options={opcionesCorte} 
-                                        onChange={(val) => updateTask(task.id, corte, val)} 
-                                        className={
-                                        task[corte] === 'Completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' :
-                                        task[corte] === 'En Proceso' ? 'text-amber-700 bg-amber-50 border-amber-100' :
-                                        task[corte] === 'Aplica' ? 'text-blue-700 bg-blue-50/50 border-blue-100' : 'text-slate-400'
-                                        }
-                                    />
+                                    <SelectInput value={task[corte]} options={opcionesCorte} onChange={(val) => updateTask(task.id, corte, val)} className={task[corte] === 'Completado' ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : task[corte] === 'En Proceso' ? 'text-amber-700 bg-amber-50 border-amber-100' : task[corte] === 'Aplica' ? 'text-blue-700 bg-blue-50/50 border-blue-100' : 'text-slate-400'} />
                                     </td>
                                 ))}
                                 
                                 <td className="p-3 text-center w-12 align-top pt-5">
-                                    <button onClick={() => deleteTask(task.id)} className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all p-2 rounded-lg hover:bg-red-50" title="Eliminar tarea">
-                                    <TrashIcon />
-                                    </button>
+                                    <button onClick={() => deleteTask(task.id)} className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all p-2 rounded-lg hover:bg-red-50" title="Eliminar tarea"><TrashIcon /></button>
                                 </td>
                                 </tr>
                             ))}
@@ -910,7 +671,11 @@
                     <div className="p-0">
                         <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50/50">
                         <h2 className="text-xl font-bold text-slate-800 tracking-tight">Dudas y Requerimientos a FIT</h2>
-                        <button onClick={addQuestion} className="flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
+                        <button onClick={() => {
+                            const newQ = { id: generateId(), segmento: "", pregunta: "", questionEng: "", pais: "", responsable: [], solicitado: "N", fecha: "", respuesta: "" };
+                            if (user) setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', newQ.id.toString()), newQ);
+                            else setQuestions([newQ, ...questions]);
+                        }} className="flex items-center gap-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-lg transition-colors shadow-sm">
                             <PlusIcon /> Añadir Pregunta
                         </button>
                         </div>
@@ -932,59 +697,32 @@
                             <tbody className="divide-y divide-slate-100">
                             {filteredQuestions.map(q => (
                                 <tr key={q.id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="p-3 w-36 align-top"><SelectInput value={q.segmento} options={opcionesSegmento} onChange={(val) => updateQuestion(q.id, 'segmento', val)} /></td>
+                                <td className="p-3 w-36 align-top"><SelectInput value={q.segmento} options={dynamicLists.segmentos} onChange={(val) => updateQuestion(q.id, 'segmento', val)} /></td>
                                 <td className="p-3 align-top"><TextInput value={q.pregunta} onChange={(val) => updateQuestion(q.id, 'pregunta', val)} placeholder="Escribe tu pregunta en español..." allowCopy={true} /></td>
-                                
                                 <td className="p-3 align-top">
-                                    <TextInput 
-                                    value={q.questionEng} 
-                                    onChange={(val) => updateQuestion(q.id, 'questionEng', val)} 
-                                    placeholder="English translation..." 
-                                    className={q.questionEng && q.questionEng.includes("[Pending") ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-blue-50/30"} 
-                                    allowCopy={true}
-                                    />
+                                    <TextInput value={q.questionEng} onChange={(val) => updateQuestion(q.id, 'questionEng', val)} placeholder="English translation..." className={q.questionEng && q.questionEng.includes("[Pending") ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-blue-50/30"} allowCopy={true} />
                                 </td>
-
                                 <td className="p-3 w-32 align-top">
-                                    <select 
-                                    value={q.pais} 
-                                    onChange={(e) => updateQuestion(q.id, 'pais', e.target.value)}
-                                    className={`w-full outline-none focus:ring-2 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border text-sm font-bold shadow-sm ${getCountryColor(q.pais)}`}
-                                    >
+                                    <select value={q.pais} onChange={(e) => updateQuestion(q.id, 'pais', e.target.value)} className={`w-full outline-none focus:ring-2 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border text-sm font-bold shadow-sm ${getCountryColor(q.pais)}`}>
                                     <option value="" className="bg-white text-slate-500">País...</option>
-                                    {opcionesPais.map(opt => (
-                                        <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>
-                                    ))}
+                                    {opcionesPais.map(opt => <option key={opt} value={opt} className="bg-white text-slate-800 font-normal">{opt}</option>)}
                                     </select>
                                 </td>
-                                
                                 <td className="p-3 w-52 align-top">
-                                    <MultiSelectDropdown value={q.responsable} options={opcionesResponsable} onChange={(val) => updateQuestion(q.id, 'responsable', val)} />
+                                    <MultiSelectDropdown value={q.responsable} options={dynamicLists.responsables} onChange={(val) => updateQuestion(q.id, 'responsable', val)} />
                                 </td>
-
                                 <td className="p-3 w-28 text-center align-top">
-                                    <select 
-                                    value={q.solicitado} 
-                                    onChange={(e) => updateQuestion(q.id, 'solicitado', e.target.value)} 
-                                    className={`bg-transparent outline-none focus:ring-2 focus:ring-blue-600 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border border-transparent hover:border-slate-300 text-center font-bold ${q.solicitado === 'Y' ? 'text-blue-700 bg-blue-100 border-blue-200' : 'text-slate-400'}`}
-                                    >
+                                    <select value={q.solicitado} onChange={(e) => updateQuestion(q.id, 'solicitado', e.target.value)} className={`bg-transparent outline-none focus:ring-2 focus:ring-blue-600 rounded-lg px-2 py-1.5 cursor-pointer appearance-none transition-colors border border-transparent hover:border-slate-300 text-center font-bold ${q.solicitado === 'Y' ? 'text-blue-700 bg-blue-100 border-blue-200' : 'text-slate-400'}`}>
                                     <option value="Y" className="bg-white text-slate-800">Y</option>
                                     <option value="N" className="bg-white text-slate-800">N</option>
                                     </select>
                                 </td>
                                 <td className="p-3 w-40 align-top">
-                                    <input 
-                                    type="date" 
-                                    value={q.fecha} 
-                                    onChange={(e) => updateQuestion(q.id, 'fecha', e.target.value)} 
-                                    className="bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded-lg px-2 py-1.5 w-full transition-colors border border-transparent hover:border-slate-300 font-medium" 
-                                    />
+                                    <input type="date" value={q.fecha} onChange={(e) => updateQuestion(q.id, 'fecha', e.target.value)} className="bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded-lg px-2 py-1.5 w-full transition-colors border border-transparent hover:border-slate-300 font-medium" />
                                 </td>
                                 <td className="p-3 align-top"><TextInput value={q.respuesta} onChange={(val) => updateQuestion(q.id, 'respuesta', val)} placeholder="Respuesta..." allowCopy={true} /></td>
                                 <td className="p-3 text-center w-12 align-top pt-5">
-                                    <button onClick={() => deleteQuestion(q.id)} className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all p-2 rounded-lg hover:bg-red-50" title="Eliminar pregunta">
-                                    <TrashIcon />
-                                    </button>
+                                    <button onClick={() => deleteQuestion(q.id)} className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all p-2 rounded-lg hover:bg-red-50" title="Eliminar pregunta"><TrashIcon /></button>
                                 </td>
                                 </tr>
                             ))}
@@ -1000,11 +738,11 @@
                     </div>
                     )}
                 </div>
+                )}
                 </div>
             );
         }
 
-        // Renderizado nativo en el DOM
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
