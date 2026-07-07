@@ -281,7 +281,6 @@
             const [activeTab, setActiveTab] = useState('tasks');
             const [isConnected, setIsConnected] = useState(false);
             const [authError, setAuthError] = useState(null);
-            const [showAuthWarning, setShowAuthWarning] = useState(false);
             
             // Datos
             const [tasks, setTasks] = useState(initialTasks);
@@ -331,13 +330,9 @@
                             await signInAnonymously(auth);
                         }
                         setAuthError(null);
-                        setShowAuthWarning(false);
                     } catch (error) {
                         console.warn("Aviso Firebase:", error.message);
-                        setAuthError("Modo Local Habilitado");
-                        if (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed') {
-                            setShowAuthWarning(true);
-                        }
+                        setAuthError(error.message); // Muestra el error exacto en pantalla para el usuario
                     }
                 };
                 initAuth();
@@ -347,7 +342,7 @@
 
             // --- SINCRONIZACIÓN DE DATOS (FIRESTORE) ---
             useEffect(() => {
-                if (!user) return;
+                if (!user && !authError) return; // Si hay authError, intentamos de todas formas si las reglas de firestore están abiertas
 
                 const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
                 const questionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
@@ -360,6 +355,8 @@
                         snapshot.forEach(doc => loadedTasks.push(doc.data()));
                         setTasks(loadedTasks.sort((a,b) => b.id - a.id)); 
                     }
+                }, (error) => {
+                    setAuthError("Permiso Denegado de Firestore: Asegúrate de publicar la regla 'allow read, write: if true;'");
                 });
 
                 const unsubQuestions = onSnapshot(questionsRef, (snapshot) => {
@@ -371,55 +368,80 @@
                         setQuestions(loadedQs.sort((a,b) => b.id - a.id)); 
                     }
                     setIsConnected(true);
-                    if (!showAuthWarning) setAuthError(null);
-                });
+                    setAuthError(null); // Si logramos leer, estamos listos.
+                }, (error) => {});
 
                 return () => {
                     unsubTasks();
                     unsubQuestions();
                 };
-            }, [user]);
+            }, [user, authError]);
 
             const generateId = () => Math.floor(Math.random() * 1000000);
 
             // --- LÓGICA DE DATOS: TAREAS ---
             const addTask = async () => {
                 const newTask = { id: generateId(), segmento: "", sistema: "", accion: "", responsable: [], pais: "", c1: "", c2: "", c3: "", c4: "", c5: "" };
-                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id.toString()), newTask);
-                else setTasks([newTask, ...tasks]);
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', newTask.id.toString()), newTask);
+                } catch(e) {
+                    setTasks([newTask, ...tasks]); // Respaldo local
+                    setAuthError("No se guardó en la nube: " + e.message);
+                }
             };
             
             const updateTask = async (id, field, value) => {
-                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()), { [field]: value }, { merge: true });
-                else setTasks(tasks.map(t => (t.id === id ? { ...t, [field]: value } : t)));
+                try {
+                    const taskToUpdate = tasks.find(t => t.id === id);
+                    if(!taskToUpdate) return;
+                    const updatedTask = { ...taskToUpdate, [field]: value };
+                    
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()), updatedTask);
+                } catch(e) {
+                    setTasks(tasks.map(t => (t.id === id ? { ...t, [field]: value } : t))); // Respaldo local
+                    setAuthError("No se actualizó en la nube: " + e.message);
+                }
             };
             
             const deleteTask = async (id) => {
-                if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()));
-                else setTasks(tasks.filter(t => t.id !== id));
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id.toString()));
+                } catch(e) {
+                    setTasks(tasks.filter(t => t.id !== id));
+                }
             };
 
             // --- LÓGICA DE DATOS: PREGUNTAS ---
             const addQuestion = async () => {
                 const newQ = { id: generateId(), segmento: "", pregunta: "", questionEng: "", pais: "", responsable: [], solicitado: "N", fecha: "", respuesta: "" };
-                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', newQ.id.toString()), newQ);
-                else setQuestions([newQ, ...questions]);
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', newQ.id.toString()), newQ);
+                } catch(e) {
+                    setQuestions([newQ, ...questions]);
+                }
             };
             
             const updateQuestion = async (id, field, value) => {
-                let updates = { [field]: value };
-                const questionToUpdate = questions.find(q => q.id === id);
-                if (field === 'pregunta' && questionToUpdate && value !== questionToUpdate.pregunta && questionToUpdate.questionEng !== "" && !questionToUpdate.questionEng.includes("[Pending Translation]")) {
-                    updates.questionEng = `[Pending Translation] ...`;
-                }
+                try {
+                    const questionToUpdate = questions.find(q => q.id === id);
+                    if(!questionToUpdate) return;
+                    const updatedQ = { ...questionToUpdate, [field]: value };
 
-                if (user) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()), updates, { merge: true });
-                else setQuestions(questions.map(q => (q.id === id ? { ...q, ...updates } : q)));
+                    if (field === 'pregunta' && value !== questionToUpdate.pregunta && questionToUpdate.questionEng !== "" && !questionToUpdate.questionEng.includes("[Pending Translation]")) {
+                        updatedQ.questionEng = `[Pending Translation] ...`;
+                    }
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()), updatedQ);
+                } catch(e) {
+                    setQuestions(questions.map(q => (q.id === id ? { ...q, [field]: value } : q)));
+                }
             };
             
             const deleteQuestion = async (id) => {
-                if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()));
-                else setQuestions(questions.filter(q => q.id !== id));
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'questions', id.toString()));
+                } catch(e) {
+                    setQuestions(questions.filter(q => q.id !== id));
+                }
             };
 
             // --- FILTRADO ---
@@ -531,7 +553,7 @@
                 </select>
             );
 
-            // NUEVO: Combobox para escritura libre + dropdown sugerido
+            // Combobox para escritura libre + dropdown sugerido
             const ComboboxInput = ({ value, options, onChange, placeholder, listId, className = "" }) => {
                 const [localValue, setLocalValue] = useState(value || "");
 
@@ -601,10 +623,10 @@
                                 </h1>
                                 <div className="flex items-center gap-2 mt-2">
                                     <p className="text-sm text-slate-500 font-medium">Dashboard de Migración LATAM</p>
-                                    <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={authError || (isConnected ? "Sincronizado en línea" : "Iniciando modo offline...")}>
+                                    <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={isConnected ? "Sincronizado en línea" : "Iniciando..."}>
                                         <CloudSyncIcon connected={isConnected} error={!!authError} />
-                                        <span className={`text-[10px] font-bold uppercase ${authError ? 'text-amber-600' : isConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                        {authError ? 'Offline (Local)' : isConnected ? 'En Línea' : 'Conectando...'}
+                                        <span className={`text-[10px] font-bold uppercase ${authError ? 'text-red-600' : isConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                        {authError ? 'Problema de Sincronización' : isConnected ? 'En Línea' : 'Conectando...'}
                                         </span>
                                     </div>
                                 </div>
@@ -674,13 +696,17 @@
                 </header>
 
                 {/* --- AVISO DE ERROR DE CONFIGURACIÓN FIREBASE --- */}
-                {showAuthWarning && (
-                    <div className="bg-amber-100 border border-amber-300 text-amber-900 px-5 py-4 rounded-xl mb-6 shadow-sm flex items-start justify-between">
+                {authError && (
+                    <div className="bg-red-50 border border-red-200 text-red-900 px-5 py-4 rounded-xl mb-6 shadow-sm flex items-start justify-between">
                         <div>
-                            <strong className="block text-lg mb-1">⚠️ Firebase - Permisos Requeridos</strong>
-                            Para guardar en línea y colaborar, ve a la <strong>Consola de Firebase</strong> (<em>main-task-r9-latam</em>), en <strong>Authentication &gt; Sign-in method</strong>, y habilita el proveedor <strong>Anónimo (Anonymous)</strong>. Asegúrate también de que las reglas de Firestore permitan escritura.
+                            <strong className="block text-lg mb-1">⚠️ Error de Sincronización Detectado</strong>
+                            La aplicación no puede guardar los datos. El servidor de Google respondió: <code>{authError}</code>
+                            <br/><br/><strong>Para solucionarlo ve a Firebase (main-task-r9-latam):</strong>
+                            <br/>1. Activa <strong>Firestore Database</strong> (NO uses Realtime Database).
+                            <br/>2. En las Reglas (Rules) de Firestore pon: <code>allow read, write: if true;</code>
+                            <br/>3. En Authentication &gt; Sign-in method, activa <strong>Anónimo (Anonymous)</strong>.
                         </div>
-                        <button onClick={() => setShowAuthWarning(false)} className="text-amber-700 hover:text-amber-900 ml-4 p-1">
+                        <button onClick={() => setAuthError(null)} className="text-red-700 hover:text-red-900 ml-4 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
@@ -741,7 +767,7 @@
                         onClick={() => setActiveTab('config')}
                         className={`flex whitespace-nowrap items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ml-auto ${activeTab === 'config' ? 'bg-blue-600 text-white border border-blue-600 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
-                        <SettingsIcon /> Configuración de Listas
+                        <SettingsIcon /> Configuración
                     </button>
                 </div>
 
@@ -752,7 +778,7 @@
                     {activeTab === 'config' && (
                         <div className="p-8">
                             <h2 className="text-2xl font-bold text-slate-800 tracking-tight mb-2 flex items-center gap-2"><SettingsIcon /> Directorio de Listas Desplegables</h2>
-                            <p className="text-sm text-slate-500 mb-8 max-w-3xl">Esta sección extrae y ordena alfabéticamente todas las opciones ingresadas en el tablero. Puedes agregar nuevas opciones directamente desde las tablas en las otras pestañas simplemente escribiéndolas en la columna deseada.</p>
+                            <p className="text-sm text-slate-500 mb-8 max-w-3xl">Esta sección extrae y ordena alfabéticamente todas las opciones ingresadas en el tablero. Puedes agregar nuevas opciones directamente desde las tablas en las otras pestañas simplemente escribiéndolas en la columna deseada (como Segmento o Sistema).</p>
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
