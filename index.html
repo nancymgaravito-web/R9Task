@@ -35,9 +35,9 @@
         
         import { initializeApp } from 'firebase/app';
         import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDoc } from 'firebase/firestore';
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
-        // --- CONFIGURACIÓN DE FIREBASE (Tus credenciales exactas) ---
+        // --- CONFIGURACIÓN DE FIREBASE ---
         const userFirebaseConfig = {
             apiKey: "AIzaSyB5J-jYyaQqAZyXT1rUc7Z6PgwWR_aPolw",
             authDomain: "main-task-r9-latam.firebaseapp.com",
@@ -285,7 +285,28 @@
             // Datos
             const [tasks, setTasks] = useState(initialTasks);
             const [questions, setQuestions] = useState(initialQuestions);
-            const [configLists, setConfigLists] = useState(defaultListas);
+            
+            // Listas ordenadas calculadas dinámicamente desde las tareas (Automático de la A a la Z)
+            const sortedSegmentos = useMemo(() => {
+                const unique = new Set(tasks.map(t => t.segmento).filter(Boolean));
+                // Aseguramos que los de initialQuestions también estén
+                questions.forEach(q => { if(q.segmento) unique.add(q.segmento) });
+                return [...unique].sort((a,b) => a.localeCompare(b));
+            }, [tasks, questions]);
+
+            const sortedSistemas = useMemo(() => {
+                const unique = new Set(tasks.map(t => t.sistema).filter(Boolean));
+                return [...unique].sort((a,b) => a.localeCompare(b));
+            }, [tasks]);
+
+            const sortedResponsables = useMemo(() => {
+                const unique = new Set();
+                tasks.forEach(t => t.responsable.forEach(r => unique.add(r)));
+                questions.forEach(q => q.responsable.forEach(r => unique.add(r)));
+                // Incorporamos los que estén por defecto por si no se han usado aún
+                defaultListas.responsables.forEach(r => unique.add(r));
+                return [...unique].sort((a,b) => a.localeCompare(b));
+            }, [tasks, questions]);
             
             // Filtros Tareas
             const [taskFilterPais, setTaskFilterPais] = useState('Todos');
@@ -297,10 +318,6 @@
             const [qFilterSegmento, setQFilterSegmento] = useState('Todos');
             const [qFilterResponsable, setQFilterResponsable] = useState('Todos');
 
-            // Listas ordenadas calculadas dinámicamente
-            const sortedSegmentos = useMemo(() => [...configLists.segmentos].sort((a,b) => a.localeCompare(b)), [configLists.segmentos]);
-            const sortedSistemas = useMemo(() => [...configLists.sistemas].sort((a,b) => a.localeCompare(b)), [configLists.sistemas]);
-            const sortedResponsables = useMemo(() => [...configLists.responsables].sort((a,b) => a.localeCompare(b)), [configLists.responsables]);
 
             // --- AUTENTICACIÓN FIREBASE ---
             useEffect(() => {
@@ -310,7 +327,7 @@
                         setAuthError(null);
                         setShowAuthWarning(false);
                     } catch (error) {
-                        console.warn("Aviso Firebase:", error.message); // Cambiado a warn para no asustar en consola
+                        console.warn("Aviso Firebase:", error.message);
                         setAuthError("Modo Local Habilitado");
                         if (error.code === 'auth/configuration-not-found' || error.code === 'auth/operation-not-allowed') {
                             setShowAuthWarning(true);
@@ -328,16 +345,6 @@
 
                 const tasksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tasks');
                 const questionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'questions');
-                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'lists');
-
-                // Sincronizar Listas de Configuración
-                const unsubConfig = onSnapshot(configRef, (docSnap) => {
-                    if (!docSnap.exists()) {
-                        setDoc(configRef, defaultListas); // Inicializar si no existe
-                    } else {
-                        setConfigLists(docSnap.data());
-                    }
-                });
 
                 const unsubTasks = onSnapshot(tasksRef, (snapshot) => {
                     if (snapshot.empty) {
@@ -364,7 +371,6 @@
                 return () => {
                     unsubTasks();
                     unsubQuestions();
-                    unsubConfig();
                 };
             }, [user]);
 
@@ -410,26 +416,6 @@
                 else setQuestions(questions.filter(q => q.id !== id));
             };
 
-            // --- LÓGICA DE DATOS: CONFIGURACIÓN DE LISTAS ---
-            const addListOption = async (listName, newValue) => {
-                if (!newValue.trim()) return;
-                const updatedList = [...configLists[listName], newValue.trim()];
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'lists'), { [listName]: updatedList }, { merge: true });
-                } else {
-                    setConfigLists(prev => ({...prev, [listName]: updatedList}));
-                }
-            };
-
-            const removeListOption = async (listName, valueToRemove) => {
-                const updatedList = configLists[listName].filter(item => item !== valueToRemove);
-                if (user) {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'lists'), { [listName]: updatedList }, { merge: true });
-                } else {
-                    setConfigLists(prev => ({...prev, [listName]: updatedList}));
-                }
-            };
-
             // --- FILTRADO ---
             const filteredTasks = tasks.filter(t => 
                 (taskFilterPais === 'Todos' || t.pais === taskFilterPais || t.pais === 'ALL') &&
@@ -444,6 +430,30 @@
             );
 
             // --- MÉTRICAS Y GRÁFICOS ---
+            const metrics = useMemo(() => {
+                let totalCells = 0;
+                let completedCells = 0;
+                let inProgressCells = 0;
+
+                filteredTasks.forEach(t => {
+                    const cortes = [t.c1, t.c2, t.c3, t.c4, t.c5];
+                    cortes.forEach(c => {
+                        if (c === "Aplica" || c === "En Proceso" || c === "Completado") totalCells++;
+                        if (c === "Completado") completedCells++;
+                        if (c === "En Proceso") inProgressCells++;
+                    });
+                });
+
+                const progressPct = totalCells === 0 ? 0 : Math.round((completedCells / totalCells) * 100);
+
+                return {
+                    totalTasks: filteredTasks.length,
+                    inProgress: inProgressCells,
+                    completed: completedCells,
+                    progressPct
+                };
+            }, [filteredTasks]);
+
             const countryProgress = useMemo(() => {
                 const stats = {
                     'Argentina': { total: 0, completed: 0, flag: '🇦🇷' },
@@ -515,6 +525,29 @@
                 </select>
             );
 
+            // NUEVO: Combobox para escritura libre + dropdown sugerido
+            const ComboboxInput = ({ value, options, onChange, placeholder, listId, className = "" }) => {
+                const [localValue, setLocalValue] = useState(value || "");
+
+                useEffect(() => { setLocalValue(value || ""); }, [value]);
+
+                return (
+                    <div className="relative w-full">
+                        <input 
+                            list={listId}
+                            value={localValue} 
+                            onChange={(e) => setLocalValue(e.target.value)}
+                            onBlur={() => { if (localValue !== value) onChange(localValue); }}
+                            placeholder={placeholder}
+                            className={`w-full bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded px-2 py-1.5 transition-colors border border-transparent hover:border-slate-300 font-medium ${className}`}
+                        />
+                        <datalist id={listId}>
+                            {options.map(opt => <option key={opt} value={opt} />)}
+                        </datalist>
+                    </div>
+                );
+            };
+
             const MultiSelectDropdown = ({ value = [], options, onChange, placeholder = "Seleccionar..." }) => {
                 const [isOpen, setIsOpen] = useState(false);
                 const safeValue = Array.isArray(value) ? value : [];
@@ -549,52 +582,31 @@
                 );
             };
 
-            const ManagerListColumn = ({ title, listName, options }) => {
-                const [newVal, setNewVal] = useState("");
-                return (
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <h3 className="font-bold text-slate-800 mb-3">{title} ({options.length})</h3>
-                        <div className="flex gap-2 mb-4">
-                            <input type="text" value={newVal} onChange={e => setNewVal(e.target.value)} placeholder="Añadir nuevo..." className="flex-1 rounded border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500" />
-                            <button onClick={() => { addListOption(listName, newVal); setNewVal(""); }} className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-sm font-medium"><PlusIcon /></button>
-                        </div>
-                        <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                            {options.map(opt => (
-                                <li key={opt} className="flex justify-between items-center bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm group">
-                                    <span className="font-medium text-slate-700 truncate">{opt}</span>
-                                    <button onClick={() => removeListOption(listName, opt)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"><TrashIcon /></button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                );
-            };
-
             return (
                 <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-6 selection:bg-blue-200">
                 
                 {/* --- HEADER --- */}
                 <header className="mb-6 pb-6 border-b border-slate-200 flex flex-col gap-6">
-                    <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
+                    <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
                             <div>
                                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-1 flex items-center gap-2">
                                 Project Control <span className="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-2xl shadow-sm tracking-widest">WMG</span>
                                 </h1>
                                 <div className="flex items-center gap-2">
-                                <p className="text-sm text-slate-500 font-medium">Dashboard de Migración LATAM - Acciones Internas y Preguntas FIT</p>
-                                <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={authError || (isConnected ? "Sincronizado en línea" : "Iniciando modo offline...")}>
-                                    <CloudSyncIcon connected={isConnected} error={!!authError} />
-                                    <span className={`text-[10px] font-bold uppercase ${authError ? 'text-amber-600' : isConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                    {authError ? 'Offline (Local)' : isConnected ? 'En Línea' : 'Iniciando'}
-                                    </span>
-                                </div>
+                                    <p className="text-sm text-slate-500 font-medium">Dashboard de Migración LATAM</p>
+                                    <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={authError || (isConnected ? "Sincronizado en línea" : "Iniciando modo offline...")}>
+                                        <CloudSyncIcon connected={isConnected} error={!!authError} />
+                                        <span className={`text-[10px] font-bold uppercase ${authError ? 'text-amber-600' : isConnected ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                        {authError ? 'Offline (Local)' : isConnected ? 'En Línea' : 'Conectando...'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* GRÁFICO DE CUMPLIMIENTO POR PAÍS */}
-                        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 overflow-x-auto">
+                        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 overflow-x-auto min-w-max">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2 border-r border-slate-100 pr-4">Cumplimiento</span>
                             {countryProgress.map(cp => (
                                 <div key={cp.name} className="flex flex-col gap-1 min-w-[100px]">
@@ -660,7 +672,9 @@
                     <div className="bg-amber-100 border border-amber-300 text-amber-900 px-5 py-4 rounded-xl mb-6 shadow-sm flex items-start justify-between">
                         <div>
                             <strong className="block text-lg mb-1">⚠️ Firebase - Modo de Lectura Local</strong>
-                            El tablero funciona de forma local y los cambios no se sincronizarán con los demás. Para solucionar esto y activar el modo multijugador, ve a la <strong>Consola de Firebase</strong> (proyecto: <em>main-task-r9-latam</em>), entra a la sección de <strong>Authentication &gt; Sign-in method</strong>, y habilita el proveedor <strong>Anónimo (Anonymous)</strong>.
+                            El tablero funciona de forma local y los cambios no se sincronizarán con los demás. Para solucionarlo y activar el modo en tiempo real, ve a la <strong>Consola de Firebase</strong> (proyecto: <em>main-task-r9-latam</em>):
+                            <br/>1. Ve a <strong>Authentication &gt; Sign-in method</strong>, y habilita <strong>Anónimo (Anonymous)</strong>.
+                            <br/>2. Ve a <strong>Firestore Database &gt; Rules</strong> y asegura: <code>allow read, write: if true;</code>
                         </div>
                         <button onClick={() => setShowAuthWarning(false)} className="text-amber-700 hover:text-amber-900 ml-4 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -668,25 +682,62 @@
                     </div>
                 )}
 
+                {/* --- PANEL DE MÉTRICAS GLOBALES (Solo visible en tareas) --- */}
+                {activeTab === 'tasks' && (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div className="p-3 bg-blue-50 rounded-xl"><TargetIcon /></div>
+                            <div>
+                            <p className="text-sm text-slate-500 font-medium">Tareas Listadas</p>
+                            <p className="text-2xl font-bold text-slate-800">{metrics.totalTasks}</p>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div className="p-3 bg-amber-50 rounded-xl"><ClockIcon /></div>
+                            <div>
+                            <p className="text-sm text-slate-500 font-medium">Hitos En Proceso</p>
+                            <p className="text-2xl font-bold text-slate-800">{metrics.inProgress}</p>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                            <div className="p-3 bg-emerald-50 rounded-xl"><CheckCircleIcon /></div>
+                            <div>
+                            <p className="text-sm text-slate-500 font-medium">Hitos Completados</p>
+                            <p className="text-2xl font-bold text-slate-800">{metrics.completed}</p>
+                            </div>
+                        </div>
+                        <div className="bg-gradient-to-br from-blue-700 to-indigo-900 p-5 rounded-2xl shadow-md flex items-center justify-between text-white hover:shadow-lg transition-shadow">
+                            <div>
+                            <p className="text-sm text-blue-100 font-medium">Progreso Global</p>
+                            <p className="text-3xl font-extrabold">{metrics.progressPct}%</p>
+                            </div>
+                            <svg viewBox="0 0 36 36" className="w-14 h-14 drop-shadow-md">
+                            <path className="text-blue-900/40" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                            <path className="text-white" strokeDasharray={`${metrics.progressPct}, 100`} d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
+                            </svg>
+                        </div>
+                    </div>
+                )}
+
                 {/* Tabs Principales */}
-                <div className="flex gap-3 mb-6">
+                <div className="flex gap-3 mb-6 overflow-x-auto pb-2">
                     <button 
                         onClick={() => setActiveTab('tasks')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'tasks' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
+                        className={`flex whitespace-nowrap items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'tasks' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
                         <DashboardIcon /> Acciones Internas
                     </button>
                     <button 
                         onClick={() => setActiveTab('questions')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'questions' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
+                        className={`flex whitespace-nowrap items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ${activeTab === 'questions' ? 'bg-slate-900 text-white border border-slate-900 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
                         <QuestionIcon /> Preguntas para FIT
                     </button>
                     <button 
                         onClick={() => setActiveTab('config')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ml-auto ${activeTab === 'config' ? 'bg-blue-600 text-white border border-blue-600 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
+                        className={`flex whitespace-nowrap items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ml-auto ${activeTab === 'config' ? 'bg-blue-600 text-white border border-blue-600 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
-                        <SettingsIcon /> Configuración de Listas
+                        <SettingsIcon /> Configuración
                     </button>
                 </div>
 
@@ -696,11 +747,28 @@
                     {/* VISTA: CONFIGURACIÓN DE LISTAS */}
                     {activeTab === 'config' && (
                         <div className="p-6">
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-6">Administración de Selectores</h2>
+                            <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-6 flex items-center gap-2"><SettingsIcon /> Directorio de Listas Desplegables</h2>
+                            <p className="text-sm text-slate-500 mb-8">Esta sección extrae automáticamente todos los nombres ingresados en el tablero para ordenarlos. Si agregas algo en las tablas, aparecerá aquí.</p>
+                            
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <ManagerListColumn title="Segmentos" listName="segmentos" options={sortedSegmentos} />
-                                <ManagerListColumn title="Responsables" listName="responsables" options={sortedResponsables} />
-                                <ManagerListColumn title="Sistemas" listName="sistemas" options={sortedSistemas} />
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Segmentos ({sortedSegmentos.length})</h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                        {sortedSegmentos.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                                    </ul>
+                                </div>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Sistemas ({sortedSistemas.length})</h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                        {sortedSistemas.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                                    </ul>
+                                </div>
+                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Responsables ({sortedResponsables.length})</h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                                        {sortedResponsables.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -735,8 +803,8 @@
                             <tbody className="divide-y divide-slate-100">
                             {filteredTasks.map(task => (
                                 <tr key={task.id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="p-3 w-32 align-top"><SelectInput value={task.segmento} options={sortedSegmentos} onChange={(val) => updateTask(task.id, 'segmento', val)} /></td>
-                                <td className="p-3 w-32 align-top"><SelectInput value={task.sistema} options={sortedSistemas} onChange={(val) => updateTask(task.id, 'sistema', val)} /></td>
+                                <td className="p-3 w-40 align-top"><ComboboxInput value={task.segmento} options={sortedSegmentos} onChange={(val) => updateTask(task.id, 'segmento', val)} placeholder="Ej: Regalias" listId={`t-seg-${task.id}`} /></td>
+                                <td className="p-3 w-40 align-top"><ComboboxInput value={task.sistema} options={sortedSistemas} onChange={(val) => updateTask(task.id, 'sistema', val)} placeholder="Ej: WARS" listId={`t-sis-${task.id}`} /></td>
                                 <td className="p-3 align-top">
                                     <div className="w-full relative group/input">
                                     <TextInput value={task.accion} onChange={(val) => updateTask(task.id, 'accion', val)} placeholder="Detalle de la acción..." allowCopy={true} />
@@ -820,7 +888,7 @@
                             <tbody className="divide-y divide-slate-100">
                             {filteredQuestions.map(q => (
                                 <tr key={q.id} className="hover:bg-slate-50/80 transition-colors group">
-                                <td className="p-3 w-36 align-top"><SelectInput value={q.segmento} options={sortedSegmentos} onChange={(val) => updateQuestion(q.id, 'segmento', val)} /></td>
+                                <td className="p-3 w-40 align-top"><ComboboxInput value={q.segmento} options={sortedSegmentos} onChange={(val) => updateQuestion(q.id, 'segmento', val)} placeholder="Ej: Regalias" listId={`q-seg-${q.id}`} /></td>
                                 <td className="p-3 align-top"><TextInput value={q.pregunta} onChange={(val) => updateQuestion(q.id, 'pregunta', val)} placeholder="Escribe tu pregunta en español..." allowCopy={true} /></td>
                                 
                                 <td className="p-3 align-top">
