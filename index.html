@@ -75,9 +75,9 @@
 
         // --- LISTAS BASE POR DEFECTO ---
         const defaultListas = {
-            segmentos: ["Regalias", "Data Migración", "Bancos", "Change Management", "Requerimientos Locales", "Impuestos", "P2P"],
-            sistemas: ["WARS", "GFS", "WARS/GFS/HFM", "Vistex/WARS/FRED", "GFS: Vendors", "WADS/WARIS: Customers", "WACS: Vendors", "GFS: COA", "Santander", "GFS: Fixed Assets", "GFS: Open Items AP", "GFS: Open Items AR", "GFS/PIMPS: POs", "GFS: Local Book", "GFS: Tax Book", "Concur: GL Mapping", "Ariba: GL Mapping", "Citibank", "Amex", "Concur", "Totvs", "Totvs: Vendors", "Totvs: COA", "Totvs: Fixed Assets", "Totvs: Open Items AP", "Totvs: Open Items AR", "Totvs/PIMPS: POs", "Totvs: Local Book", "Totvs: Tax Book", "GFS/HFM", "Totvs/HFM", "WARS/Totvs/HFM"],
-            responsables: ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon", "Anibal Flores", "Gonzalo Anselmi", "Gustavo Hernandez", "Martin Nieto", "Elizabeth Vazquez", "Oscar Barranco", "Luis Erik Rodriguez", "Norma Riquelme", "Nadia Ceron", "Ignacio Flores", "Sebastian Quinteros", "Carla Figueira", "Gustavo Pereira", "Marcio Ricardo", "Diego Vilhena", "Maurilio Pimenta", "Fernando Mongue", "Nancy Garavito"]
+            segmentos: ["Bancos", "Change Management", "Data Migración", "Impuestos", "P2P", "Regalias", "Requerimientos Locales"],
+            sistemas: ["Amex", "Ariba: GL Mapping", "Citibank", "Concur", "Concur: GL Mapping", "GFS", "GFS/HFM", "GFS/PIMPS: POs", "GFS: COA", "GFS: Fixed Assets", "GFS: Local Book", "GFS: Open Items AP", "GFS: Open Items AR", "GFS: Tax Book", "GFS: Vendors", "Santander", "Totvs", "Totvs/HFM", "Totvs/PIMPS: POs", "Totvs: COA", "Totvs: Fixed Assets", "Totvs: Local Book", "Totvs: Open Items AP", "Totvs: Open Items AR", "Totvs: Tax Book", "Totvs: Vendors", "Vistex/WARS/FRED", "WACS: Vendors", "WADS/WARIS: Customers", "WARS", "WARS/GFS/HFM", "WARS/Totvs/HFM"],
+            responsables: ["Anibal Flores", "Carla Figueira", "Diego Vilhena", "Elizabeth Vazquez", "Fernando Mongue", "Gonzalo Anselmi", "Gustavo Hernandez", "Gustavo Pereira", "Ignacio Flores", "Luis Erik Rodriguez", "Marcio Ricardo", "Martin Nieto", "Maurilio Pimenta", "Nadia Ceron", "Nancy Garavito", "Noelia Fernandez", "Norberto Castrillon", "Norma Riquelme", "Oscar Barranco", "Paola Winogard", "Sebastian Quinteros"]
         };
         const opcionesPais = ["Argentina", "Mexico", "Chile", "Brazil", "ALL"];
         const opcionesCorte = ["", "Aplica", "En Proceso", "Completado"];
@@ -95,6 +95,7 @@
 
         // --- DATOS SEMILLA ---
         const initialTasks = [
+            // ARGENTINA
             { id: 101, segmento: "Regalias", sistema: "WARS", accion: "Validación de todos los Royaltors en WARS que tengan su codigo (BP) en SAP", responsable: ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
             { id: 102, segmento: "Regalias", sistema: "GFS", accion: "Validar que todos los Royaltors en GFS/Template tengan el grupo contable ROY", responsable: ["Paola Winogard", "Noelia Fernandez", "Norberto Castrillon"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
             { id: 103, segmento: "Regalias", sistema: "WARS", accion: "Actualización de Nombres Artisticos a Nombres Legales en WARS", responsable: ["Paola Winogard", "Noelia Fernandez"], pais: "Argentina", c1: "", c2: "Aplica", c3: "Aplica", c4: "Aplica", c5: "Aplica" },
@@ -288,23 +289,25 @@
             
             // Listas ordenadas calculadas dinámicamente desde las tareas (Automático de la A a la Z)
             const sortedSegmentos = useMemo(() => {
-                const unique = new Set(tasks.map(t => t.segmento).filter(Boolean));
-                // Aseguramos que los de initialQuestions también estén
+                const unique = new Set();
+                defaultListas.segmentos.forEach(s => unique.add(s));
+                tasks.forEach(t => { if(t.segmento) unique.add(t.segmento) });
                 questions.forEach(q => { if(q.segmento) unique.add(q.segmento) });
                 return [...unique].sort((a,b) => a.localeCompare(b));
             }, [tasks, questions]);
 
             const sortedSistemas = useMemo(() => {
-                const unique = new Set(tasks.map(t => t.sistema).filter(Boolean));
+                const unique = new Set();
+                defaultListas.sistemas.forEach(s => unique.add(s));
+                tasks.forEach(t => { if(t.sistema) unique.add(t.sistema) });
                 return [...unique].sort((a,b) => a.localeCompare(b));
             }, [tasks]);
 
             const sortedResponsables = useMemo(() => {
                 const unique = new Set();
+                defaultListas.responsables.forEach(r => unique.add(r));
                 tasks.forEach(t => t.responsable.forEach(r => unique.add(r)));
                 questions.forEach(q => q.responsable.forEach(r => unique.add(r)));
-                // Incorporamos los que estén por defecto por si no se han usado aún
-                defaultListas.responsables.forEach(r => unique.add(r));
                 return [...unique].sort((a,b) => a.localeCompare(b));
             }, [tasks, questions]);
             
@@ -317,7 +320,6 @@
             const [qFilterPais, setQFilterPais] = useState('Todos');
             const [qFilterSegmento, setQFilterSegmento] = useState('Todos');
             const [qFilterResponsable, setQFilterResponsable] = useState('Todos');
-
 
             // --- AUTENTICACIÓN FIREBASE ---
             useEffect(() => {
@@ -597,7 +599,7 @@
                                 <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 mb-1 flex items-center gap-2">
                                 Project Control <span className="bg-blue-600 text-white px-2 py-0.5 rounded-lg text-2xl shadow-sm tracking-widest">WMG</span>
                                 </h1>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 mt-2">
                                     <p className="text-sm text-slate-500 font-medium">Dashboard de Migración LATAM</p>
                                     <div className="flex items-center gap-1.5 ml-4 bg-white px-2 py-1 rounded-full border border-slate-200 shadow-sm" title={authError || (isConnected ? "Sincronizado en línea" : "Iniciando modo offline...")}>
                                         <CloudSyncIcon connected={isConnected} error={!!authError} />
@@ -610,10 +612,10 @@
                         </div>
 
                         {/* GRÁFICO DE CUMPLIMIENTO POR PAÍS */}
-                        <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 overflow-x-auto min-w-max">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2 border-r border-slate-100 pr-4">Cumplimiento</span>
+                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-8 overflow-x-auto min-w-max">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2 border-r border-slate-100 pr-4">Cumplimiento<br/>Por País</span>
                             {countryProgress.map(cp => (
-                                <div key={cp.name} className="flex flex-col gap-1 min-w-[100px]">
+                                <div key={cp.name} className="flex flex-col gap-1 min-w-[120px]">
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="font-medium text-slate-700">{cp.flag} {cp.name}</span>
                                         <span className="font-bold text-blue-700">{cp.pct}%</span>
@@ -675,10 +677,8 @@
                 {showAuthWarning && (
                     <div className="bg-amber-100 border border-amber-300 text-amber-900 px-5 py-4 rounded-xl mb-6 shadow-sm flex items-start justify-between">
                         <div>
-                            <strong className="block text-lg mb-1">⚠️ Firebase - Modo de Lectura Local</strong>
-                            El tablero funciona de forma local y los cambios no se sincronizarán con los demás. Para solucionarlo y activar el modo en tiempo real, ve a la <strong>Consola de Firebase</strong> (proyecto: <em>main-task-r9-latam</em>):
-                            <br/>1. Ve a <strong>Authentication &gt; Sign-in method</strong>, y habilita <strong>Anónimo (Anonymous)</strong>.
-                            <br/>2. Ve a <strong>Firestore Database &gt; Rules</strong> y asegura: <code>allow read, write: if true;</code>
+                            <strong className="block text-lg mb-1">⚠️ Firebase - Permisos Requeridos</strong>
+                            Para guardar en línea y colaborar, ve a la <strong>Consola de Firebase</strong> (<em>main-task-r9-latam</em>), en <strong>Authentication &gt; Sign-in method</strong>, y habilita el proveedor <strong>Anónimo (Anonymous)</strong>. Asegúrate también de que las reglas de Firestore permitan escritura.
                         </div>
                         <button onClick={() => setShowAuthWarning(false)} className="text-amber-700 hover:text-amber-900 ml-4 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -686,7 +686,7 @@
                     </div>
                 )}
 
-                {/* --- PANEL DE MÉTRICAS GLOBALES (Solo visible en tareas) --- */}
+                {/* --- PANEL DE MÉTRICAS GLOBALES --- */}
                 {activeTab === 'tasks' && (
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -741,7 +741,7 @@
                         onClick={() => setActiveTab('config')}
                         className={`flex whitespace-nowrap items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all shadow-sm ml-auto ${activeTab === 'config' ? 'bg-blue-600 text-white border border-blue-600 scale-105' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900'}`}
                     >
-                        <SettingsIcon /> Configuración
+                        <SettingsIcon /> Configuración de Listas
                     </button>
                 </div>
 
@@ -750,27 +750,33 @@
                     
                     {/* VISTA: CONFIGURACIÓN DE LISTAS */}
                     {activeTab === 'config' && (
-                        <div className="p-6">
-                            <h2 className="text-xl font-bold text-slate-800 tracking-tight mb-6 flex items-center gap-2"><SettingsIcon /> Directorio de Listas Desplegables</h2>
-                            <p className="text-sm text-slate-500 mb-8">Esta sección extrae automáticamente todos los nombres ingresados en el tablero para ordenarlos. Si agregas un segmento o sistema nuevo directamente escribiéndolo en las tablas, aparecerá aquí automáticamente en orden alfabético.</p>
+                        <div className="p-8">
+                            <h2 className="text-2xl font-bold text-slate-800 tracking-tight mb-2 flex items-center gap-2"><SettingsIcon /> Directorio de Listas Desplegables</h2>
+                            <p className="text-sm text-slate-500 mb-8 max-w-3xl">Esta sección extrae y ordena alfabéticamente todas las opciones ingresadas en el tablero. Puedes agregar nuevas opciones directamente desde las tablas en las otras pestañas simplemente escribiéndolas en la columna deseada.</p>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Segmentos ({sortedSegmentos.length})</h3>
-                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                        {sortedSegmentos.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                                    <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                                        Segmentos <span className="bg-blue-100 text-blue-700 py-0.5 px-2.5 rounded-full text-xs">{sortedSegmentos.length}</span>
+                                    </h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                        {sortedSegmentos.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 truncate shadow-sm">{opt}</li>)}
                                     </ul>
                                 </div>
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Sistemas ({sortedSistemas.length})</h3>
-                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                        {sortedSistemas.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                                    <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                                        Sistemas <span className="bg-blue-100 text-blue-700 py-0.5 px-2.5 rounded-full text-xs">{sortedSistemas.length}</span>
+                                    </h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                        {sortedSistemas.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 truncate shadow-sm">{opt}</li>)}
                                     </ul>
                                 </div>
-                                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                    <h3 className="font-bold text-slate-800 mb-3 border-b pb-2 border-slate-200">Responsables ({sortedResponsables.length})</h3>
-                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2">
-                                        {sortedResponsables.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm text-slate-700">{opt}</li>)}
+                                <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                                    <h3 className="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                                        Responsables <span className="bg-blue-100 text-blue-700 py-0.5 px-2.5 rounded-full text-xs">{sortedResponsables.length}</span>
+                                    </h3>
+                                    <ul className="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                                        {sortedResponsables.map(opt => <li key={opt} className="bg-white border border-slate-200 px-3 py-2 rounded-lg text-sm font-medium text-slate-700 truncate shadow-sm">{opt}</li>)}
                                     </ul>
                                 </div>
                             </div>
@@ -810,7 +816,7 @@
                                 <td className="p-3 w-40 align-top"><ComboboxInput value={task.segmento} options={sortedSegmentos} onChange={(val) => updateTask(task.id, 'segmento', val)} placeholder="Ej: Regalias" listId={`t-seg-${task.id}`} /></td>
                                 <td className="p-3 w-40 align-top"><ComboboxInput value={task.sistema} options={sortedSistemas} onChange={(val) => updateTask(task.id, 'sistema', val)} placeholder="Ej: WARS" listId={`t-sis-${task.id}`} /></td>
                                 <td className="p-3 align-top">
-                                    <div className="w-full relative group/input">
+                                    <div className="w-full relative group/input h-full">
                                     <TextInput value={task.accion} onChange={(val) => updateTask(task.id, 'accion', val)} placeholder="Detalle de la acción..." allowCopy={true} />
                                     </div>
                                 </td>
@@ -893,9 +899,14 @@
                             {filteredQuestions.map(q => (
                                 <tr key={q.id} className="hover:bg-slate-50/80 transition-colors group">
                                 <td className="p-3 w-40 align-top"><ComboboxInput value={q.segmento} options={sortedSegmentos} onChange={(val) => updateQuestion(q.id, 'segmento', val)} placeholder="Ej: Regalias" listId={`q-seg-${q.id}`} /></td>
-                                <td className="p-3 align-top"><TextInput value={q.pregunta} onChange={(val) => updateQuestion(q.id, 'pregunta', val)} placeholder="Escribe tu pregunta en español..." allowCopy={true} /></td>
+                                <td className="p-3 align-top">
+                                    <div className="w-full relative h-full">
+                                        <TextInput value={q.pregunta} onChange={(val) => updateQuestion(q.id, 'pregunta', val)} placeholder="Escribe tu pregunta en español..." allowCopy={true} />
+                                    </div>
+                                </td>
                                 
                                 <td className="p-3 align-top">
+                                    <div className="w-full relative h-full">
                                     <TextInput 
                                     value={q.questionEng} 
                                     onChange={(val) => updateQuestion(q.id, 'questionEng', val)} 
@@ -903,6 +914,7 @@
                                     className={q.questionEng && q.questionEng.includes("[Pending") ? "bg-amber-50 border-amber-200 text-amber-700" : "bg-blue-50/30"} 
                                     allowCopy={true}
                                     />
+                                    </div>
                                 </td>
 
                                 <td className="p-3 w-32 align-top">
@@ -940,7 +952,11 @@
                                     className="bg-transparent text-slate-700 outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white rounded-lg px-2 py-1.5 w-full transition-colors border border-transparent hover:border-slate-300 font-medium" 
                                     />
                                 </td>
-                                <td className="p-3 align-top"><TextInput value={q.respuesta} onChange={(val) => updateQuestion(q.id, 'respuesta', val)} placeholder="Respuesta..." allowCopy={true} /></td>
+                                <td className="p-3 align-top">
+                                    <div className="w-full relative h-full">
+                                        <TextInput value={q.respuesta} onChange={(val) => updateQuestion(q.id, 'respuesta', val)} placeholder="Respuesta..." allowCopy={true} />
+                                    </div>
+                                </td>
                                 <td className="p-3 text-center w-12 align-top pt-5">
                                     <button onClick={() => deleteQuestion(q.id)} className="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all p-2 rounded-lg hover:bg-red-50" title="Eliminar pregunta">
                                     <TrashIcon />
